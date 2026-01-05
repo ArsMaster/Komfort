@@ -19,11 +19,12 @@
         <!-- Выпадающий список -->
         <div class="dropdown-menu" [class.show]="isCatalogOpen()">
           <!-- Динамические категории -->
-          <div *ngFor="let category of categories" 
-               class="dropdown-item"
-               (click)="navigateToCategory(category)">
-            {{ category.title }}
-          </div>
+          @for (category of categories; track category.id) {
+            <div class="dropdown-item"
+                 (click)="navigateToCategory(category)">
+              {{ category.title }}
+            </div>
+          }
         </div>
       </div>
       
@@ -96,11 +97,12 @@
       </div>
       <div class="mobile-catalog-dropdown" [class.show]="isMobileCatalogOpen()">
         <!-- Динамические категории для мобильной версии -->
-        <div *ngFor="let category of categories" 
-             class="mobile-dropdown-item" 
-             (click)="navigateToCategory(category)">
-          {{ category.title }}
-        </div>
+        @for (category of categories; track category.id) {
+          <div class="mobile-dropdown-item" 
+               (click)="navigateToCategory(category)">
+            {{ category.title }}
+          </div>
+        }
       </div>
     </div>
     

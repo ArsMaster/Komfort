@@ -4,8 +4,8 @@ import { AboutComponent } from './components/about/about.component';
 import { ContactsComponent } from './components/contacts/contacts.component';
 import { ProductsCatalogComponent } from './components/product-catalog/products-catalog.component';
 import { AdminComponent } from './components/admin/admin.component';
-import { LoginComponent } from './components/auth/login.component'; // Добавьте этот импорт
-import { AuthGuard } from './guards/auth.guard'; // Добавьте этот импорт
+import { LoginComponent } from './components/auth/login.component';
+import { AuthGuard } from './guards/auth.guard';
 import { ShopsComponent } from './components/shops/shops.component';
 import { AdminShopsComponent } from './components/admin/admin-shops.component';
 
@@ -44,7 +44,7 @@ export const routes: Routes = [
   {
     path: 'admin',
     component: AdminComponent,
-    canActivate: [AuthGuard], // Добавьте эту защиту
+    canActivate: [AuthGuard],
     children: [
       { 
         path: 'products', 

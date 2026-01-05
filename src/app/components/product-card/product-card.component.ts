@@ -17,7 +17,7 @@ export class ProductCardComponent {
   
   // Текущий индекс изображения для отображения
   currentImageIndex = 0;
-  showImageGallery = false; // Флаг для показа галереи
+  showImageGallery = false;
 
   // Получаем текущее изображение
   getCurrentImageUrl(): string {

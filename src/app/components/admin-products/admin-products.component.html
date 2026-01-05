@@ -22,138 +22,148 @@
   </div>
 
   <!-- Модальное окно удаления -->
-  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="cancelDelete()">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Подтверждение удаления</h3>
-      </div>
-      <div class="modal-body">
-        <p>Вы уверены, что хотите удалить товар "{{ productToDelete?.name }}"?</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="cancelDelete()">Отмена</button>
-        <button class="btn btn-danger" (click)="confirmDelete()">Удалить</button>
+  @if (showDeleteModal) {
+    <div class="modal-overlay" (click)="cancelDelete()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Подтверждение удаления</h3>
+        </div>
+        <div class="modal-body">
+          <p>Вы уверены, что хотите удалить товар "{{ productToDelete?.name }}"?</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="cancelDelete()">Отмена</button>
+          <button class="btn btn-danger" (click)="confirmDelete()">Удалить</button>
+        </div>
       </div>
     </div>
-  </div>
+  }
 
   <!-- Форма добавления/редактирования товара -->
-  <div class="admin-form" *ngIf="showForm">
-    <h3>{{ editingProduct ? 'Редактировать' : 'Добавить' }} товар</h3>
-    
-    <div class="form-group">
-      <label>Название товара:</label>
-      <input [(ngModel)]="currentProduct.name" class="form-control" required>
-    </div>
-    
-    <div class="form-group">
-      <label>Описание:</label>
-      <textarea [(ngModel)]="currentProduct.description" class="form-control" rows="4"></textarea>
-    </div>
-    
-    <div class="form-group">
-      <label>Цена:</label>
-      <input type="number" [(ngModel)]="currentProduct.price" class="form-control" min="0" step="0.01">
-    </div>
-    
-    <div class="form-group">
-      <label>Категория:</label>
-      <select 
-        [(ngModel)]="currentProduct.categoryId" 
-        class="form-control" 
-        required
-        (change)="debugCategorySelect($event)">
-        <option [value]="undefined" disabled selected>Выберите категорию</option>
-        @for (category of categories(); track category.id) {
-          <option [value]="category.id">{{ category.title }}</option>
-        }
-      </select>
+  @if (showForm) {
+    <div class="admin-form">
+      <h3>{{ editingProduct ? 'Редактировать' : 'Добавить' }} товар</h3>
       
-      <!-- Отладка -->
-      @if (currentProduct.categoryId) {
-        <div class="debug-info" style="margin-top: 5px; padding: 5px; background: #f0f0f0; border-radius: 3px;">
-          <small style="color: #666;">
-            Выбран ID: {{ currentProduct.categoryId }} (тип: {{ typeof currentProduct.categoryId }})<br>
-            Название: {{ getCategoryName(currentProduct.categoryId) }}
-          </small>
+      <div class="form-group">
+        <label>Название товара:</label>
+        <input [(ngModel)]="currentProduct.name" class="form-control" required>
+      </div>
+      
+      <div class="form-group">
+        <label>Описание:</label>
+        <textarea [(ngModel)]="currentProduct.description" class="form-control" rows="4"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label>Цена:</label>
+        <input type="number" [(ngModel)]="currentProduct.price" class="form-control" min="0" step="0.01">
+      </div>
+      
+      <div class="form-group">
+        <label>Категория:</label>
+        <select 
+          [(ngModel)]="currentProduct.categoryId" 
+          class="form-control" 
+          required
+          (change)="debugCategorySelect($event)">
+          <option [value]="undefined" disabled selected>Выберите категорию</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.title }}</option>
+          }
+        </select>
+        
+        <!-- Отладка -->
+        @if (currentProduct.categoryId) {
+          <div class="debug-info" style="margin-top: 5px; padding: 5px; background: #f0f0f0; border-radius: 3px;">
+            <small style="color: #666;">
+              Выбран ID: {{ currentProduct.categoryId }} (тип: {{ typeof currentProduct.categoryId }})<br>
+              Название: {{ getCategoryName(currentProduct.categoryId) }}
+            </small>
+          </div>
+        }
+        
+        <small class="help-text">
+          Выберите категорию из списка. Управление категориями в разделе "Категории"
+        </small>
+      </div>
+      
+      <div class="form-group">
+        <label>Остаток на складе:</label>
+        <input type="number" [(ngModel)]="currentProduct.stock" class="form-control" min="0">
+      </div>
+      
+      <div class="form-group">
+        <label>Изображения (URL, каждое с новой строки):</label>
+        <textarea [(ngModel)]="imageUrlsText" class="form-control" rows="4"></textarea>
+        <small>Или загрузите изображения:</small>
+      </div>
+      
+      <div class="form-group">
+        <label>Загрузить изображения:</label>
+        <input type="file" 
+               #multipleFileInput
+               (change)="onFilesSelected($event)" 
+               multiple 
+               accept="image/*"
+               class="form-control">
+        <small>Максимум 5 изображений</small>
+      </div>
+      
+      @if (selectedFiles.length > 0) {
+        <div class="file-previews">
+          @for (file of selectedFiles; track $index) {
+            <div class="file-preview">
+              <img [src]="getFilePreview(file)" [alt]="file.name">
+              <div class="file-info">
+                <span>{{ getShortFileName(file.name, 20) }}</span>
+                <button type="button" (click)="removeFile($index)" class="btn-remove">×</button>
+              </div>
+            </div>
+          }
         </div>
       }
       
-      <small class="help-text">
-        Выберите категорию из списка. Управление категориями в разделе "Категории"
-      </small>
-    </div>
-    
-    <div class="form-group">
-      <label>Остаток на складе:</label>
-      <input type="number" [(ngModel)]="currentProduct.stock" class="form-control" min="0">
-    </div>
-    
-    <div class="form-group">
-      <label>Изображения (URL, каждое с новой строки):</label>
-      <textarea [(ngModel)]="imageUrlsText" class="form-control" rows="4"></textarea>
-      <small>Или загрузите изображения:</small>
-    </div>
-    
-    <div class="form-group">
-      <label>Загрузить изображения:</label>
-      <input type="file" 
-             #multipleFileInput
-             (change)="onFilesSelected($event)" 
-             multiple 
-             accept="image/*"
-             class="form-control">
-      <small>Максимум 5 изображений</small>
-    </div>
-    
-    <div *ngIf="selectedFiles.length > 0" class="file-previews">
-      <div *ngFor="let file of selectedFiles; let i = index" class="file-preview">
-        <img [src]="getFilePreview(file)" [alt]="file.name">
-        <div class="file-info">
-          <span>{{ getShortFileName(file.name, 20) }}</span>
-          <button type="button" (click)="removeFile(i)" class="btn-remove">×</button>
-        </div>
+      <div class="form-group">
+        <label>Характеристики (каждая с новой строки):</label>
+        <textarea [(ngModel)]="currentProduct.features" class="form-control" rows="3"></textarea>
+      </div>
+      
+      <div class="form-actions">
+        <button (click)="saveProduct()" class="btn btn-success">
+          Сохранить
+        </button>
+        <button (click)="cancelEdit()" class="btn btn-secondary">
+          Отмена
+        </button>
       </div>
     </div>
-    
-    <div class="form-group">
-      <label>Характеристики (каждая с новой строки):</label>
-      <textarea [(ngModel)]="currentProduct.features" class="form-control" rows="3"></textarea>
-    </div>
-    
-    <div class="form-actions">
-      <button (click)="saveProduct()" class="btn btn-success">
-        Сохранить
-      </button>
-      <button (click)="cancelEdit()" class="btn btn-secondary">
-        Отмена
-      </button>
-    </div>
-  </div>
+  }
 
   <!-- Список товаров -->
   <div class="products-list">
-    <div *ngFor="let product of products()" class="product-item">
-      <div class="product-image">
-        <img [src]="product.imageUrls[0] || '/products/default.jpg'" [alt]="product.name">
-      </div>
-      <div class="product-info">
-        <h4>{{ product.name }}</h4>
-        <p class="product-description">{{ product.description }}</p>
-        <div class="product-details">
-          <span class="product-price">{{ product.price | number:'1.0-0' }} ₽</span>
-          <span class="product-category">Категория: {{ product.categoryName || getCategoryName(product.categoryId) }}</span>
-          <span class="product-stock">Остаток: {{ product.stock }}</span>
+    @for (product of products(); track product.id) {
+      <div class="product-item">
+        <div class="product-image">
+          <img [src]="product.imageUrls[0] || '/products/default.jpg'" [alt]="product.name">
+        </div>
+        <div class="product-info">
+          <h4>{{ product.name }}</h4>
+          <p class="product-description">{{ product.description }}</p>
+          <div class="product-details">
+            <span class="product-price">{{ product.price | number:'1.0-0' }} ₽</span>
+            <span class="product-category">Категория: {{ product.categoryName || getCategoryName(product.categoryId) }}</span>
+            <span class="product-stock">Остаток: {{ product.stock }}</span>
+          </div>
+        </div>
+        <div class="product-actions">
+          <button (click)="editProduct(product)" class="btn btn-sm btn-edit">
+            Редактировать
+          </button>
+          <button (click)="deleteProduct(product)" class="btn btn-sm btn-danger">
+            Удалить
+          </button>
         </div>
       </div>
-      <div class="product-actions">
-        <button (click)="editProduct(product)" class="btn btn-sm btn-edit">
-          Редактировать
-        </button>
-        <button (click)="deleteProduct(product)" class="btn btn-sm btn-danger">
-          Удалить
-        </button>
-      </div>
-    </div>
+    }
   </div>
 </div>

@@ -16,28 +16,20 @@
   box-sizing: border-box;
 }
 
-/* Убираем max-width и margin: auto */
 .header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  /* Убираем эти строки: */
-  /* max-width: 1400px; */
-  /* margin: 0 auto; */
 }
 
-/* Логотип - делаем отступ от левого края */
 .logo {
   width: auto;
-  margin-left: 80px; /* Можно оставить 0 или добавить немного отступа */
+  margin-left: 80px;
   min-width: 150px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  
-  /* Если хотите больше отступа от левого края */
-  /* padding-left: 20px; */
   
   @media (max-width: 1024px) {
     margin-left: 0;
@@ -91,7 +83,7 @@
   justify-content: center;
   flex-grow: 1;
   min-width: 600px;
-  margin: 0 50px; /* Добавляем отступы с обеих сторон */
+  margin: 0 50px;
   
   @media (max-width: 1024px) {
     min-width: 500px;
@@ -147,11 +139,10 @@
   }
 }
 
-/* Правая часть header - отодвигаем к правому краю */
 .header-right {
   display: flex;
   align-items: center;
-  gap: 20px; /* Увеличиваем отступ между элементами */
+  gap: 20px;
   flex-shrink: 0;
   margin-right: 70px;
   
@@ -160,7 +151,6 @@
   }
 }
 
-/* Кнопка администратора для десктопа - отодвигаем к краю */
 .desktop-admin-btn {
   background: transparent;
   border: none;
@@ -172,7 +162,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-right: 0; /* Убираем margin, используем gap в .header-right */
+  margin-right: 0;
   flex-shrink: 0;
   
   &:hover {
@@ -190,7 +180,6 @@
   }
 }
 
-/* Кнопка меню (гамбургер) - отодвигаем от края */
 .menu-toggle {
   display: none;
   background: none;
@@ -218,7 +207,6 @@
   }
 }
 
-/* Стили для десктопного выпадающего меню */
 .catalog-item {
   position: relative;
   flex-shrink: 0;
@@ -427,7 +415,7 @@
 /* Медиа-запросы для адаптивности */
 @media (max-width: 1024px) {
   .header {
-    padding: 0 30px; /* Увеличиваем отступы по краям */
+    padding: 0 30px;
   }
   
   .header-content {
@@ -441,7 +429,7 @@
 
 @media (max-width: 768px) {
   .header {
-    padding: 0 15px; /* Сохраняем отступы на мобильных */
+    padding: 0 15px;
     justify-content: space-between;
   }
   
@@ -457,7 +445,7 @@
 
 .nav-heading {
   &.active {
-    color: #ff6b6b; /* или любой твой цвет */
+    color: #ff6b6b;
     font-weight: 600;
     border-bottom: 2px solid #ff6b6b;
   }
@@ -476,8 +464,6 @@ a.nav-heading, a.mobile-nav-heading {
   cursor: pointer;
   display: block;
 }
-
-// Добавьте эти стили в header.component.scss
 
 // Стили для кнопки выхода
 .logout-btn {

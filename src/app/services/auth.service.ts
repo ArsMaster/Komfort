@@ -19,7 +19,6 @@ export class AuthService {
 
   private currentUser = signal<User | null>(this.loadUserFromStorage());
   
-  // Исправьте: computed свойства должны вызываться как функции
   isLoggedIn = computed(() => this.currentUser() !== null);
   isAdmin = computed(() => this.currentUser()?.role === 'admin');
 
@@ -52,7 +51,6 @@ export class AuthService {
     return this.currentUser();
   }
 
-  // Добавьте метод для прямого перехода в админ-панель
   navigateToAdmin(): void {
     this.router.navigate(['/admin/home']);
   }

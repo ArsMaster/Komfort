@@ -1,4 +1,3 @@
-// components/header/header.component.ts
 import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -85,7 +84,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.closeMenu();
   }
 
-  // Исправьте: computed свойства вызываются как функции
   isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
   }

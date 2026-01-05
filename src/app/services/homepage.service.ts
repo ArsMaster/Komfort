@@ -1,4 +1,3 @@
-// services/homepage.service.ts
 import { Injectable } from '@angular/core';
 import { HomePageSettings, Slide, CompanyInfo } from '../models/homepage-settings.model';
 

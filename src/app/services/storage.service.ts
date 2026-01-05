@@ -1,4 +1,3 @@
-// Создайте файл storage.service.ts
 import { Injectable } from '@angular/core';
 
 @Injectable({
@@ -50,7 +49,6 @@ export class StorageService {
       }
     }
     
-    // Удаляем из обоих хранилищ
     keysToRemove.forEach(key => {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);

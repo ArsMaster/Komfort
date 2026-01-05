@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common'; // Добавьте CurrencyPipe
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { CatalogService } from '../../services/catalog.service';
@@ -10,7 +10,7 @@ import { ExcelService } from '../../services/excel.service';
 @Component({
   selector: 'app-admin-products',
   standalone: true,
-  imports: [CommonModule, FormsModule], // Добавьте CurrencyPipe сюда
+  imports: [CommonModule, FormsModule],
   templateUrl: './admin-products.component.html',
   styleUrls: ['./admin-products.component.scss']
 })
@@ -29,7 +29,7 @@ export class AdminProductsComponent implements OnInit {
   imageUrlsText: string = '';
   
   currentProduct: Partial<Product> = this.getEmptyProduct();
-  isLoading = signal(false); // Измените на signal
+  isLoading = signal(false);
   
   constructor(
     private productService: ProductService,
@@ -70,7 +70,7 @@ export class AdminProductsComponent implements OnInit {
       description: '',
       price: 0,
       categoryId: undefined,
-      imageUrls: ['/assets/products/default.jpg'], // Исправьте путь
+      imageUrls: ['/assets/products/default.jpg'],
       stock: 0,
       features: []
     };
@@ -129,7 +129,7 @@ export class AdminProductsComponent implements OnInit {
   }
 
   updateImageUrlsFromFiles(): void {
-    const urls = this.selectedFiles.map(file => `/assets/products/${file.name}`); // Исправьте путь
+    const urls = this.selectedFiles.map(file => `/assets/products/${file.name}`);
     this.imageUrlsText = urls.join('\n');
     this.currentProduct.imageUrls = urls;
   }
@@ -138,7 +138,7 @@ export class AdminProductsComponent implements OnInit {
     this.selectedFiles = [];
     this.imagePreviews = [];
     this.imageUrlsText = '';
-    this.currentProduct.imageUrls = ['/assets/products/default.jpg']; // Исправьте путь
+    this.currentProduct.imageUrls = ['/assets/products/default.jpg'];
     if (this.multipleFileInput) {
       this.multipleFileInput.nativeElement.value = '';
     }

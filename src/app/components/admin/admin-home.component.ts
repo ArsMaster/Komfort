@@ -61,7 +61,7 @@ export class AdminHomeComponent implements OnInit {
 
   openEditSlideModal(index: number): void {
     this.editingSlideIndex = index;
-    this.editingSlide = { ...this.slides[index] }; // Создаем копию для редактирования
+    this.editingSlide = { ...this.slides[index] };
     this.isEditModalOpen = true;
   }
 

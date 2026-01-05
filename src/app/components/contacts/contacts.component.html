@@ -35,79 +35,88 @@
         <div class="social-links">
           <h3>Мы в соцсетях:</h3>
           <div class="social-icons">
-            <a *ngFor="let social of contacts.social" 
-               [href]="social.url" 
-               class="social-link"
-               target="_blank">
-              {{ social.icon }}
-            </a>
+            @for (social of contacts.social; track social.url) {
+              <a [href]="social.url" 
+                 class="social-link"
+                 target="_blank">
+                {{ social.icon }}
+              </a>
+            }
           </div>
         </div>
       </div>
       
       <div class="contact-form">
         <!-- Показываем форму, если не отправлено и не загружается -->
-        <form (ngSubmit)="onSubmit()" *ngIf="!isSubmitted && !isLoading">
-          
-          <!-- Поле имени -->
-          <div class="form-group">
-            <label>Ваше имя *</label>
-            <input type="text" 
-                   [(ngModel)]="contactForm.name" 
-                   name="name"
-                   class="form-input"
-                   placeholder="Введите ваше имя"
-                   required>
-          </div>
-          
-          <!-- Поле телефона -->
-          <div class="form-group">
-            <label>Телефон *</label>
-            <input type="tel" 
-                   [(ngModel)]="contactForm.phone" 
-                   name="phone"
-                   class="form-input"
-                   placeholder="+7 (999) 123-45-67"
-                   required>
-          </div>
-          
-          <!-- Чекбокс согласия -->
-          <div class="checkbox-group">
-            <input type="checkbox" 
-                   id="agree" 
-                   [(ngModel)]="contactForm.agree" 
-                   name="agree"
-                   required>
-            <label for="agree">
-              Согласен(-а) с 
-              <a href="/privacy-policy" target="_blank">политикой конфиденциальности</a>
-            </label>
-          </div>
-          
-          <!-- Сообщение об ошибке -->
-          <div class="error-message" *ngIf="errorMessage">
-            {{ errorMessage }}
-          </div>
-          
-          <!-- Кнопка отправки -->
-          <button type="submit" class="submit-btn" [disabled]="isLoading">
-            Отправить заявку
-          </button>
-        </form>
+        @if (!isSubmitted && !isLoading) {
+          <form (ngSubmit)="onSubmit()">
+            
+            <!-- Поле имени -->
+            <div class="form-group">
+              <label>Ваше имя *</label>
+              <input type="text" 
+                     [(ngModel)]="contactForm.name" 
+                     name="name"
+                     class="form-input"
+                     placeholder="Введите ваше имя"
+                     required>
+            </div>
+            
+            <!-- Поле телефона -->
+            <div class="form-group">
+              <label>Телефон *</label>
+              <input type="tel" 
+                     [(ngModel)]="contactForm.phone" 
+                     name="phone"
+                     class="form-input"
+                     placeholder="+7 (999) 123-45-67"
+                     required>
+            </div>
+            
+            <!-- Чекбокс согласия -->
+            <div class="checkbox-group">
+              <input type="checkbox" 
+                     id="agree" 
+                     [(ngModel)]="contactForm.agree" 
+                     name="agree"
+                     required>
+              <label for="agree">
+                Согласен(-а) с 
+                <a href="/privacy-policy" target="_blank">политикой конфиденциальности</a>
+              </label>
+            </div>
+            
+            <!-- Сообщение об ошибке -->
+            @if (errorMessage) {
+              <div class="error-message">
+                {{ errorMessage }}
+              </div>
+            }
+            
+            <!-- Кнопка отправки -->
+            <button type="submit" class="submit-btn" [disabled]="isLoading">
+              Отправить заявку
+            </button>
+          </form>
+        }
         
         <!-- Индикатор загрузки -->
-        <div class="loading-indicator" *ngIf="isLoading">
-          <div class="spinner"></div>
-          <p>Отправка заявки...</p>
-        </div>
+        @if (isLoading) {
+          <div class="loading-indicator">
+            <div class="spinner"></div>
+            <p>Отправка заявки...</p>
+          </div>
+        }
         
         <!-- Сообщение об успехе -->
-        <div class="success-message" *ngIf="isSubmitted && !isLoading">
-          <div class="success-icon">✓</div>
-          <h3>Спасибо за заявку!</h3>
-          <p>Мы свяжемся с вами в ближайшее время.</p>
-          <p class="success-hint">Форма автоматически очистится через 5 секунд</p>
-        </div>
+        @if (isSubmitted && !isLoading) {
+          <div class="success-message">
+            <div class="success-icon">✓</div>
+            <h3>Спасибо за заявку!</h3>
+            <p>Мы свяжемся с вами в ближайшее время.</p>
+            <p class="success-hint">Форма автоматически очистится через 5 секунд</p>
+          </div>
+        }
       </div>
     </div>
   </div>

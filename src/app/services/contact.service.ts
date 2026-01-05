@@ -1,4 +1,3 @@
-// services/contact.service.ts
 import { Injectable, signal } from '@angular/core';
 import { ContactInfo } from '../models/contact.model';
 
@@ -6,7 +5,6 @@ import { ContactInfo } from '../models/contact.model';
   providedIn: 'root'
 })
 export class ContactService {
-  // Начальные данные (можно заменить на пустые значения)
   private contacts = signal<ContactInfo>({
     id: 1,
     phone: '+7 (938) 505-00-07',

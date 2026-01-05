@@ -1,4 +1,3 @@
-// components/admin/admin.component.ts
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, RouterOutlet } from '@angular/router';
@@ -13,8 +12,8 @@ import { AuthService } from '../../services/auth.service';
 })
 export class AdminComponent {
   constructor(
-    private authService: AuthService, // Добавьте
-    private router: Router // Добавьте
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   // Метод для выхода

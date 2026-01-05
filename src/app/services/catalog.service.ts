@@ -108,7 +108,6 @@ export class CatalogService {
     const categories = this.getCategories();
     if (categories.length === 0) return 1;
     
-    // Находим максимальный ID и добавляем 1
     const maxId = Math.max(...categories.map(cat => cat.id));
     return maxId + 1;
   }
