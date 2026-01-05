@@ -1,0 +1,70 @@
+<div class="about-komfort">
+  <!-- Секция "О компании" -->
+  <section class="about-section">
+    <div class="container">
+      <h1 class="section-title">О КОМПАНИИ</h1>
+      
+      <div class="about-content">
+        @for (section of aboutSections; track section.title; let i = $index) {
+          @if (section.title && section.content) {
+            <div class="about-card">
+              <h2>{{ section.title }}</h2>
+              <div class="divider"></div>
+              <p>{{ section.content }}</p>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Секция "Схема проезда" -->
+  <section class="map-section">
+    <div class="container">
+      <div class="map-wrapper">
+        <div class="map-info">
+          <h1 class="section-title">СХЕМА ПРОЕЗДА</h1>
+          
+          <div class="address-card">
+            <div class="address-header">
+              <h3>Адрес склада:</h3>
+              <button class="print-btn" (click)="printMap()">распечатать схему проезда</button>
+            </div>
+            
+            @if (location.address) {
+              <p class="address">{{ location.address }}</p>
+            }
+            
+            @if (location.workHours) {
+              <div class="work-hours">
+                <h3>График работы склада:</h3>
+                <p>{{ location.workHours }}</p>
+              </div>
+            }
+            
+            <div class="map-preview">
+              <div id="yandex-map" class="map-container"></div>
+              
+              <div class="map-legend">
+                <div class="legend-item">
+                  <span class="legend-dot car"></span>
+                  <span>На машине</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot taxi"></span>
+                  <span>На такси</span>
+                </div>
+              </div>
+            </div>
+            
+            <button class="open-map-btn" (click)="openMap()">
+              Открыть в Яндекс.Картах
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<app-contacts></app-contacts>

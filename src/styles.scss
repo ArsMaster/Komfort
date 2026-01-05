@@ -1,0 +1,366 @@
+/* styles.scss */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Устанавливаем Montserrat как основной шрифт */
+body {
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', 
+               Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', 
+               sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #333;
+}
+
+/* Общие стили для админ-панели */
+.admin-container {
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* Улучшенные стили для форм */
+.form-group {
+  &.has-error {
+    .form-control {
+      border-color: #dc3545;
+    }
+    
+    .error-message {
+      color: #dc3545;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+  }
+}
+
+/* Стили для таблиц в админке */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  
+  th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+  }
+  
+  tr:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .actions-cell {
+    white-space: nowrap;
+    text-align: right;
+  }
+}
+
+/* Адаптивность админ-панели */
+@media (max-width: 768px) {
+  .admin-nav {
+    flex-direction: column;
+    gap: 10px;
+    
+    a {
+      text-align: center;
+    }
+  }
+  
+  .admin-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+/* Стили для админ-панели */
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+  
+  &-primary {
+    background: #007bff;
+    color: white;
+    
+    &:hover {
+      background: #0056b3;
+    }
+  }
+  
+  &-secondary {
+    background: #6c757d;
+    color: white;
+    
+    &:hover {
+      background: #545b62;
+    }
+  }
+  
+  &-success {
+    background: #28a745;
+    color: white;
+    
+    &:hover {
+      background: #1e7e34;
+    }
+  }
+  
+  &-danger {
+    background: #dc3545;
+    color: white;
+    
+    &:hover {
+      background: #bd2130;
+    }
+  }
+  
+  &-warning {
+    background: #ffc107;
+    color: #212529;
+    
+    &:hover {
+      background: #e0a800;
+    }
+  }
+  
+  &-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+}
+
+.admin-page {
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    
+    h1 {
+      margin: 0;
+      color: #333;
+    }
+    
+    .admin-actions {
+      display: flex;
+      gap: 10px;
+    }
+  }
+  
+  .admin-form {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    
+    h3 {
+      margin-top: 0;
+      color: #333;
+    }
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #555;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      
+      &:focus {
+        outline: none;
+        border-color: #007bff;
+      }
+    }
+    
+    textarea.form-control {
+      resize: vertical;
+      min-height: 80px;
+    }
+  }
+  
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+  }
+  
+  .products-list {
+    .product-item {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      
+      .product-image {
+        width: 80px;
+        height: 80px;
+        
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 4px;
+        }
+      }
+      
+      .product-info {
+        flex: 1;
+        
+        h4 {
+          margin: 0 0 5px 0;
+          color: #333;
+        }
+        
+        .product-description {
+          margin: 0 0 10px 0;
+          color: #666;
+          font-size: 14px;
+          max-height: 60px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        .product-details {
+          display: flex;
+          gap: 15px;
+          font-size: 14px;
+          
+          .product-price {
+            color: #28a745;
+            font-weight: 600;
+          }
+          
+          .product-category {
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 2px 8px;
+            border-radius: 12px;
+          }
+          
+          .product-stock {
+            color: #007bff;
+          }
+        }
+      }
+      
+      .product-actions {
+        display: flex;
+        gap: 8px;
+      }
+    }
+  }
+  
+  .file-previews {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 15px 0;
+    
+    .file-preview {
+      width: 100px;
+      
+      img {
+        width: 100%;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+      
+      .file-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 5px;
+        font-size: 12px;
+        
+        .btn-remove {
+          background: #dc3545;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+    }
+  }
+  
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .modal {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    width: 90%;
+    max-width: 400px;
+    
+    .modal-header {
+      margin-bottom: 15px;
+      
+      h3 {
+        margin: 0;
+        color: #333;
+      }
+    }
+    
+    .modal-body {
+      margin-bottom: 20px;
+      color: #666;
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+  }
+}

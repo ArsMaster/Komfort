@@ -1,0 +1,73 @@
+<div class="product-card">
+  <!-- Основной контейнер изображения -->
+  <div class="product-image-container">
+    <div class="product-image" (click)="openGallery()">
+      <!-- Основное изображение -->
+      <img 
+        [src]="getCurrentImageUrl()" 
+        [alt]="product.name"
+        (error)="handleImageError($event)"
+        class="main-image"
+      >
+      
+      <!-- Стрелки для переключения (если больше 1 фото) -->
+      @if (product.imageUrls && product.imageUrls.length > 1 && !showImageGallery) {
+        <div class="image-nav">
+          <button class="nav-btn prev" (click)="$event.stopPropagation(); prevImage($event)">‹</button>
+          <button class="nav-btn next" (click)="$event.stopPropagation(); nextImage($event)">›</button>
+        </div>
+        
+        <!-- Индикатор текущего изображения -->
+        <div class="image-counter">
+          {{ currentImageIndex + 1 }} / {{ product.imageUrls.length }}
+        </div>
+      }
+      
+      <div class="product-category">{{ product.categoryName }}</div>
+      <div class="product-stock" [class.low-stock]="product.stock < 3">
+        {{ product.stock }} в наличии
+      </div>
+    </div>
+  </div>
+  
+  <!-- Галерея (полноэкранный просмотр) -->
+  @if (showImageGallery) {
+    <div class="gallery-overlay" (click)="closeGallery($event)">
+      <div class="gallery-content" (click)="$event.stopPropagation()">
+        <button class="gallery-close" (click)="closeGallery($event)">×</button>
+        
+        <!-- Основное изображение в галерее -->
+        <div class="gallery-main">
+          <img [src]="getCurrentImageUrl()" [alt]="product.name" class="gallery-image">
+        </div>
+        
+        <!-- Навигация в галерее -->
+        @if (product.imageUrls && product.imageUrls.length > 1) {
+          <div class="gallery-nav">
+            <button class="gallery-prev" (click)="prevImage($event)">‹</button>
+            <button class="gallery-next" (click)="nextImage($event)">›</button>
+          </div>
+          
+          <!-- Миниатюры -->
+          <div class="gallery-thumbnails">
+            @for (image of getGalleryImages(); track $index) {
+              <img 
+                [src]="image" 
+                [alt]="'Изображение ' + ($index + 1)"
+                [class.active]="currentImageIndex === $index"
+                (click)="setGalleryImage($index)"
+              >
+            }
+          </div>
+          
+          <!-- Счетчик -->
+          <div class="gallery-counter">
+            {{ currentImageIndex + 1 }} / {{ product.imageUrls.length }}
+          </div>
+        }
+      </div>
+    </div>
+  }
+  
+  <!-- ... остальной код без изменений ... -->
+</div>

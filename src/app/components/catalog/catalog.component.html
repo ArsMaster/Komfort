@@ -1,0 +1,23 @@
+<section class="catalog">
+  <div class="container">
+    <div class="catalog-header">
+      <h1 class="catalog-title">Каталог</h1>
+      <p class="catalog-subtitle">выберите нужный раздел</p>
+      <div class="catalog-divider"></div>
+    </div>
+
+    <div class="catalog-categories">
+      @for (category of categories; track category.id) {
+        <div class="category-card">
+          <div class="category-image">
+            <img [src]="category.image" [alt]="category.title">
+          </div>
+          
+          <div class="category-title-overlay">
+            <h3 class="category-title">{{ category.title }}</h3>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

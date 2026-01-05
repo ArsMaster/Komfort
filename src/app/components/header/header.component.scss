@@ -1,0 +1,538 @@
+.header {
+  /* Фиксируем header при прокрутке */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  
+  height: 80px;
+  background-color: white;
+  color: black;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 5px solid #D3D3D3;
+  padding: 0 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Убираем max-width и margin: auto */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  /* Убираем эти строки: */
+  /* max-width: 1400px; */
+  /* margin: 0 auto; */
+}
+
+/* Логотип - делаем отступ от левого края */
+.logo {
+  width: auto;
+  margin-left: 80px; /* Можно оставить 0 или добавить немного отступа */
+  min-width: 150px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  
+  /* Если хотите больше отступа от левого края */
+  /* padding-left: 20px; */
+  
+  @media (max-width: 1024px) {
+    margin-left: 0;
+    min-width: 120px;
+  }
+  
+  @media (max-width: 768px) {
+    margin-left: 0;
+    min-width: auto;
+  }
+}
+
+.logo-img {
+  height: 50px;
+  display: block;
+  
+  @media (max-width: 1024px) {
+    height: 40px;
+  }
+  
+  @media (max-width: 768px) {
+    height: 35px;
+  }
+}
+
+.logo-sub {
+  font-family: 'Geometria', 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #000;
+  margin-top: 5px;
+  opacity: 0.9;
+  line-height: 1;
+  
+  @media (max-width: 1024px) {
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 14px;
+    letter-spacing: 1.5px;
+  }
+}
+
+/* Навигация */
+.nav-headings {
+  display: flex;
+  justify-content: center;
+  flex-grow: 1;
+  min-width: 600px;
+  margin: 0 50px; /* Добавляем отступы с обеих сторон */
+  
+  @media (max-width: 1024px) {
+    min-width: 500px;
+    justify-content: flex-start;
+    margin: 0 30px;
+  }
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.nav-heading {
+  margin: 0 25px;
+  font-family: 'Geometria', 'Montserrat', sans-serif;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-size: 16px;
+  cursor: pointer;
+  position: relative;
+  padding-bottom: 5px;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+  
+  @media (max-width: 1024px) {
+    margin: 0 15px;
+    font-size: 14px;
+  }
+  
+  @media (max-width: 768px) {
+    margin: 0 10px;
+    font-size: 13px;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: #ff6b6b;
+    transition: width 0.3s ease;
+  }
+  
+  &:hover {
+    color: #ff6b6b;
+    
+    &::after {
+      width: 100%;
+    }
+  }
+}
+
+/* Правая часть header - отодвигаем к правому краю */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* Увеличиваем отступ между элементами */
+  flex-shrink: 0;
+  margin-right: 70px;
+  
+  @media (max-width: 768px) {
+    gap: 15px;
+  }
+}
+
+/* Кнопка администратора для десктопа - отодвигаем к краю */
+.desktop-admin-btn {
+  background: transparent;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 0; /* Убираем margin, используем gap в .header-right */
+  flex-shrink: 0;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  
+  .admin-icon {
+    width: 24px;
+    height: 24px;
+    fill: #333;
+  }
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+/* Кнопка меню (гамбургер) - отодвигаем от края */
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  width: 30px;
+  height: 24px;
+  position: relative;
+  cursor: pointer;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0;
+  flex-shrink: 0;
+  
+  span {
+    display: block;
+    height: 3px;
+    width: 100%;
+    background-color: black;
+    border-radius: 3px;
+    transition: 0.3s;
+  }
+  
+  @media (max-width: 768px) {
+    display: flex;
+  }
+}
+
+/* Стили для десктопного выпадающего меню */
+.catalog-item {
+  position: relative;
+  flex-shrink: 0;
+  
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: -50%;
+    width: 180px;
+    background: white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1001;
+    
+    &.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    
+    .dropdown-item {
+      padding: 12px 45px;
+      font-family: 'Geometria', 'Montserrat', sans-serif;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      &:hover {
+        background: #f8f9fa;
+        color: #ff6b6b;
+        padding-left: 25px;
+      }
+    }
+  }
+  
+  .dropdown-arrow {
+    font-size: 10px;
+    margin-left: 5px;
+    transition: transform 0.3s ease;
+  }
+  
+  &:hover .dropdown-arrow {
+    transform: rotate(180deg);
+  }
+  
+  @media (max-width: 768px) {
+    .dropdown-menu {
+      display: none;
+    }
+  }
+}
+
+/* Мобильное меню */
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 80%;
+  max-width: 300px;
+  height: 100vh;
+  background-color: white;
+  z-index: 1000;
+  transition: right 0.3s ease;
+  
+  &.active {
+    right: 0;
+  }
+}
+
+.mobile-menu-content {
+  padding: 80px 20px 20px;
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 30px;
+  color: black;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.mobile-nav-heading {
+  padding: 15px 0;
+  font-size: 18px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  font-family: 'Geometria', 'Montserrat', sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+/* Стили для мобильного выпадающего меню */
+.mobile-catalog-item {
+  .catalog-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .catalog-arrow {
+      font-size: 20px;
+      font-weight: 300;
+    }
+  }
+  
+  .mobile-catalog-dropdown {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: rgba(0, 0, 0, 0.02);
+    
+    &.show {
+      max-height: 300px;
+    }
+    
+    .mobile-dropdown-item {
+      padding: 12px 20px 12px 40px;
+      font-size: 16px;
+      color: #555;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      font-family: 'Geometria', 'Montserrat', sans-serif;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      &:hover {
+        background: rgba(0, 0, 0, 0.03);
+      }
+    }
+  }
+}
+
+/* Секция администратора в мобильном меню */
+.mobile-admin-section {
+  margin-top: auto;
+  padding: 20px 0;
+  border-top: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.mobile-admin-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Geometria', 'Montserrat', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  
+  .mobile-admin-icon {
+    width: 24px;
+    height: 24px;
+    fill: #333;
+  }
+}
+
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: none;
+  
+  .mobile-menu.active ~ & {
+    display: block;
+  }
+}
+
+/* Медиа-запросы для адаптивности */
+@media (max-width: 1024px) {
+  .header {
+    padding: 0 30px; /* Увеличиваем отступы по краям */
+  }
+  
+  .header-content {
+    max-width: 100%;
+  }
+  
+  .nav-headings {
+    margin: 0 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 15px; /* Сохраняем отступы на мобильных */
+    justify-content: space-between;
+  }
+  
+  .header-content {
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .mobile-menu.active ~ .menu-overlay {
+    display: block;
+  }
+}
+
+.nav-heading {
+  &.active {
+    color: #ff6b6b; /* или любой твой цвет */
+    font-weight: 600;
+    border-bottom: 2px solid #ff6b6b;
+  }
+}
+
+.mobile-nav-heading {
+  &.active {
+    color: #667eea;
+    font-weight: 600;
+  }
+}
+
+a.nav-heading, a.mobile-nav-heading {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+}
+
+// Добавьте эти стили в header.component.scss
+
+// Стили для кнопки выхода
+.logout-btn {
+  background-color: #dc3545 !important;
+  
+  &:hover {
+    background-color: #c82333 !important;
+  }
+  
+  .admin-icon {
+    fill: white !important;
+  }
+}
+
+// Чтобы кнопки были рядом
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px; // Отступ между кнопками
+  
+  .desktop-admin-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    
+    .admin-icon {
+      width: 24px;
+      height: 24px;
+      fill: #333;
+    }
+  }
+}
+
+// Стили для мобильной версии кнопки выхода
+.mobile-admin-btn.logout-btn {
+  background-color: #dc3545 !important;
+  color: white !important;
+  
+  &:hover {
+    background-color: #c82333 !important;
+  }
+  
+  .mobile-admin-icon {
+    fill: white !important;
+  }
+}

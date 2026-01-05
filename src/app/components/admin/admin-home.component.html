@@ -1,0 +1,238 @@
+<div class="admin-section">
+  <h2>Редактирование главной страницы</h2>
+  
+  <div class="tabs">
+    <button class="tab-btn" 
+            [class.active]="activeTab === 'slides'"
+            (click)="switchTab('slides')">
+      Слайды
+    </button>
+    <button class="tab-btn" 
+            [class.active]="activeTab === 'company'"
+            (click)="switchTab('company')">
+      О компании
+    </button>
+  </div>
+
+  <!-- Вкладка Слайды -->
+  @if (activeTab === 'slides') {
+  <div class="tab-content active" id="slides">
+    <div class="admin-form">
+      <h3>Управление слайдами</h3>
+      
+      <div class="form-group">
+        <label>Добавить новый слайд:</label>
+        <div class="slide-form">
+          <div class="image-upload-section">
+            <div class="image-url-input">
+              <input [(ngModel)]="newSlide.image" 
+                     placeholder="URL изображения" 
+                     class="form-control">
+              <span class="or-text">или</span>
+              <button type="button" 
+                      class="btn btn-secondary"
+                      (click)="openFilePickerForNewSlide()">
+                📁 Выбрать файл
+              </button>
+            </div>
+            <input type="file" 
+                   #fileInput 
+                   accept="image/*" 
+                   class="file-input-hidden"
+                   (change)="onFileSelectedForNewSlide($event)">
+            
+            @if (newSlide.image && isImageUrl(newSlide.image)) {
+              <div class="image-preview">
+                <img [src]="newSlide.image" 
+                     alt="Превью" 
+                     (error)="clearNewSlideImage()"
+                     class="preview-image">
+                <button type="button" 
+                        class="btn btn-sm btn-danger remove-preview"
+                        (click)="clearNewSlideImage()">
+                  ✕ Удалить
+                </button>
+              </div>
+            }
+          </div>
+          
+          <input [(ngModel)]="newSlide.title" 
+                 placeholder="Заголовок" 
+                 class="form-control">
+          <textarea [(ngModel)]="newSlide.description" 
+                    placeholder="Описание" 
+                    class="form-control" 
+                    rows="2"></textarea>
+          <button (click)="addSlide()" 
+                  class="btn btn-primary"
+                  [disabled]="!newSlide.image">
+            Добавить слайд
+          </button>
+        </div>
+      </div>
+
+        <div class="slides-list">
+          <div class="section-header">
+            <h4>Текущие слайды</h4>
+            <div class="slide-counter">
+              Всего слайдов: <strong>{{slides.length}}</strong>
+            </div>
+          </div>
+          
+          @if (slides.length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">📷</div>
+              <h3>Слайды отсутствуют</h3>
+              <p>Добавьте первый слайд, чтобы начать</p>
+            </div>
+          } @else {
+            @for (slide of slides; track slide.image; let i = $index) {
+              <div class="slide-item">
+                <div class="slide-preview">
+                  <img [src]="slide.image" 
+                       alt="Превью слайда" 
+                       (error)="handleImageError($event)">
+                </div>
+                <div class="slide-details">
+                  <input [(ngModel)]="slide.title" 
+                         class="form-control" 
+                         placeholder="Заголовок слайда">
+                  <textarea [(ngModel)]="slide.description" 
+                            class="form-control" 
+                            rows="2" 
+                            placeholder="Описание слайда"></textarea>
+                  <input [(ngModel)]="slide.image" 
+                         class="form-control" 
+                         placeholder="URL изображения">
+                </div>
+                <div class="slide-actions">
+                  <button (click)="moveSlideUp(i)" 
+                          [disabled]="i === 0" 
+                          class="btn btn-secondary" 
+                          title="Переместить вверх">
+                    ↑ Вверх
+                  </button>
+                  <button (click)="moveSlideDown(i)" 
+                          [disabled]="i === slides.length - 1" 
+                          class="btn btn-secondary"
+                          title="Переместить вниз">
+                    ↓ Вниз
+                  </button>
+                  <!-- Кнопка для полного редактирования слайда -->
+                  <button (click)="openEditSlideModal(i)" 
+                          class="btn btn-changer"
+                          title="Редактировать слайд">
+                    ✎ Изменить
+                  </button>
+                  <button (click)="removeSlide(i)" 
+                          class="btn btn-danger"
+                          title="Удалить слайд">
+                    ✕ Удалить
+                  </button>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Вкладка "О компании" -->
+  @if (activeTab === 'company') {
+    <div class="tab-content active" id="company">
+      <div class="admin-form">
+        <h3>Редактирование раздела "О компании"</h3>
+        
+        <div class="about-sections">
+          @for (section of aboutSections; track section.title; let i = $index) {
+            <div class="about-section-edit">
+              <div class="section-content">
+                <input [(ngModel)]="section.title" 
+                      placeholder="Заголовок раздела" 
+                      class="form-control">
+                <textarea [(ngModel)]="section.content" 
+                          placeholder="Содержание раздела" 
+                          class="form-control" rows="4"></textarea>
+              </div>
+              @if (aboutSections.length > 1) {
+                <div class="section-actions">
+                  <button (click)="removeAboutSection(i)" class="btn btn-danger">Удалить раздел</button>
+                </div>
+              }
+            </div>
+          }
+          
+          <button (click)="addAboutSection()" class="btn btn-secondary"> Добавить раздел</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  
+
+  <!-- Кнопка сохранения -->
+  <div class="form-actions">
+    <button (click)="saveAllSettings()" class="btn btn-success">
+      💾 Сохранить все изменения
+    </button>
+  </div>
+</div>
+
+<!-- Модальное окно редактирования слайда -->
+@if (isEditModalOpen && editingSlide) {
+  <div class="modal-overlay" (click)="closeEditModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Редактирование слайда</h3>
+        <button class="modal-close" (click)="closeEditModal()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Изображение:</label>
+          <div class="image-upload-section">
+            <div class="image-url-input">
+              <input [(ngModel)]="editingSlide.image" 
+                     placeholder="URL изображения" 
+                     class="form-control">
+              <button type="button" 
+                      class="btn btn-secondary"
+                      (click)="changeImageForEditingSlide()">
+                📁 Выбрать файл
+              </button>
+            </div>
+            
+            @if (editingSlide.image && isImageUrl(editingSlide.image)) {
+              <div class="image-preview">
+                <img [src]="editingSlide.image" 
+                     alt="Превью" 
+                     class="preview-image">
+              </div>
+            }
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Заголовок:</label>
+          <input [(ngModel)]="editingSlide.title" 
+                 class="form-control" 
+                 placeholder="Заголовок слайда">
+        </div>
+        
+        <div class="form-group">
+          <label>Описание:</label>
+          <textarea [(ngModel)]="editingSlide.description" 
+                    class="form-control" 
+                    rows="3" 
+                    placeholder="Описание слайда"></textarea>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button (click)="closeEditModal()" class="btn btn-secondary">Отмена</button>
+        <button (click)="saveEditedSlide()" class="btn btn-success">Сохранить</button>
+      </div>
+    </div>
+  </div>
+}

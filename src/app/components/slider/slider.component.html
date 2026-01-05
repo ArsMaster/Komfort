@@ -1,0 +1,40 @@
+<div class="slider-container">
+  <div class="slider-wrapper">
+    @for (slide of slides(); track slide.image; let i = $index) {
+      <div class="slide" [class.active]="currentSlide() === i">
+        <img [src]="slide.image" 
+             [alt]="slide.title || 'Slide'" 
+             class="slide-image">
+        
+        @if (slide.title || slide.description) {
+          <div class="slide-content">
+            @if (slide.title) {
+              <h2>{{ slide.title }}</h2>
+            }
+            @if (slide.description) {
+              <p>{{ slide.description }}</p>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+  
+  <!-- Кнопки навигации -->
+  <button class="slider-btn prev" (click)="prevSlide()">
+    <span>‹</span>
+  </button>
+  <button class="slider-btn next" (click)="nextSlide()">
+    <span>›</span>
+  </button>
+  
+  <!-- Индикаторы (точки) -->
+  <div class="slider-indicators">
+    @for (slide of slides(); track slide.image; let i = $index) {
+      <button class="indicator"
+              [class.active]="currentSlide() === i"
+              (click)="goToSlide(i)">
+      </button>
+    }
+  </div>
+</div>

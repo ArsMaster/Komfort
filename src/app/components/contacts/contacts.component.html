@@ -1,0 +1,114 @@
+<!-- Секция "Контакты" -->
+<section id="contacts" class="contacts-section">
+  <div class="container">
+    <h1 class="section-title">КОНТАКТЫ</h1>
+    <p class="contacts-description">
+      Свяжитесь с нами или оставьте заявку, мы перезвоним и вышлем прайс-лист.
+    </p>
+    
+    <div class="contacts-wrapper">
+      <div class="contacts-info">
+        <div class="contact-item" (click)="callPhone()">
+          <span class="contact-icon">📞</span>
+          <div>
+            <h3>Телефон</h3>
+            <p class="contact-value">{{ contacts.phone }}</p>
+          </div>
+        </div>
+        
+        <div class="contact-item" (click)="sendEmail()">
+          <span class="contact-icon">✉️</span>
+          <div>
+            <h3>Email</h3>
+            <p class="contact-value">{{ contacts.email }}</p>
+          </div>
+        </div>
+        
+        <div class="contact-item">
+          <span class="contact-icon">🏢</span>
+          <div>
+            <h3>Офис продаж</h3>
+            <p class="contact-value">{{ contacts.office }}</p>
+          </div>
+        </div>
+        
+        <div class="social-links">
+          <h3>Мы в соцсетях:</h3>
+          <div class="social-icons">
+            <a *ngFor="let social of contacts.social" 
+               [href]="social.url" 
+               class="social-link"
+               target="_blank">
+              {{ social.icon }}
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="contact-form">
+        <!-- Показываем форму, если не отправлено и не загружается -->
+        <form (ngSubmit)="onSubmit()" *ngIf="!isSubmitted && !isLoading">
+          
+          <!-- Поле имени -->
+          <div class="form-group">
+            <label>Ваше имя *</label>
+            <input type="text" 
+                   [(ngModel)]="contactForm.name" 
+                   name="name"
+                   class="form-input"
+                   placeholder="Введите ваше имя"
+                   required>
+          </div>
+          
+          <!-- Поле телефона -->
+          <div class="form-group">
+            <label>Телефон *</label>
+            <input type="tel" 
+                   [(ngModel)]="contactForm.phone" 
+                   name="phone"
+                   class="form-input"
+                   placeholder="+7 (999) 123-45-67"
+                   required>
+          </div>
+          
+          <!-- Чекбокс согласия -->
+          <div class="checkbox-group">
+            <input type="checkbox" 
+                   id="agree" 
+                   [(ngModel)]="contactForm.agree" 
+                   name="agree"
+                   required>
+            <label for="agree">
+              Согласен(-а) с 
+              <a href="/privacy-policy" target="_blank">политикой конфиденциальности</a>
+            </label>
+          </div>
+          
+          <!-- Сообщение об ошибке -->
+          <div class="error-message" *ngIf="errorMessage">
+            {{ errorMessage }}
+          </div>
+          
+          <!-- Кнопка отправки -->
+          <button type="submit" class="submit-btn" [disabled]="isLoading">
+            Отправить заявку
+          </button>
+        </form>
+        
+        <!-- Индикатор загрузки -->
+        <div class="loading-indicator" *ngIf="isLoading">
+          <div class="spinner"></div>
+          <p>Отправка заявки...</p>
+        </div>
+        
+        <!-- Сообщение об успехе -->
+        <div class="success-message" *ngIf="isSubmitted && !isLoading">
+          <div class="success-icon">✓</div>
+          <h3>Спасибо за заявку!</h3>
+          <p>Мы свяжемся с вами в ближайшее время.</p>
+          <p class="success-hint">Форма автоматически очистится через 5 секунд</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

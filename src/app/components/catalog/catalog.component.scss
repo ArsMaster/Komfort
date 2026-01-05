@@ -1,0 +1,201 @@
+.catalog {
+  padding: 80px 0;
+  background-color: #f9f9f9;
+  font-family: 'Geometria', 'Montserrat', sans-serif;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.catalog-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.catalog-title {
+  font-size: 42px;
+  font-weight: 800;
+  color: #000;
+  margin-bottom: 15px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.catalog-subtitle {
+  font-size: 20px;
+  color: #666;
+  margin-bottom: 25px;
+  font-weight: 400;
+}
+
+.catalog-divider {
+  width: 100px;
+  height: 3px;
+  background-color: #ff6b6b;
+  margin: 0 auto;
+}
+
+.catalog-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 30px;
+}
+
+.category-card {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  height: 300px;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    
+    .category-image img {
+      transform: scale(1.05);
+    }
+    
+    .category-title-overlay {
+      background: rgba(0, 0, 0, 0.8);
+      
+      .category-title {
+        color: white;
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
+.category-image {
+  width: 100%;
+  height: 100%;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+}
+
+.category-title-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  transition: all 0.3s ease;
+  
+  .category-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+    margin: 0;
+    transform: translateY(5px);
+    transition: transform 0.3s ease;
+  }
+}
+
+/* Альтернативный стиль с заголовком по центру */
+/*
+.category-title-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+  
+  .category-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+    padding: 15px 30px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+  
+  .category-card:hover & {
+    background: rgba(0, 0, 0, 0.6);
+    
+    .category-title {
+      background: rgba(255, 107, 107, 0.9);
+      transform: scale(1.05);
+    }
+  }
+}
+*/
+
+/* Адаптивность */
+@media (max-width: 992px) {
+  .catalog {
+    padding: 60px 0;
+  }
+  
+  .catalog-title {
+    font-size: 36px;
+  }
+  
+  .catalog-categories {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  
+  .category-card {
+    height: 250px;
+  }
+  
+  .category-title-overlay .category-title {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 768px) {
+  .catalog {
+    padding: 40px 0;
+  }
+  
+  .catalog-title {
+    font-size: 28px;
+  }
+  
+  .catalog-subtitle {
+    font-size: 18px;
+  }
+  
+  .catalog-categories {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .category-card {
+    height: 200px;
+  }
+  
+  .category-title-overlay {
+    padding: 15px;
+    
+    .category-title {
+      font-size: 18px;
+    }
+  }
+}

@@ -1,0 +1,169 @@
+.shops-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.shops-header {
+  text-align: center;
+  margin-bottom: 50px;
+
+  h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 15px;
+  }
+
+  p {
+    color: #666;
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
+
+.shops-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 30px;
+}
+
+.shop-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.shop-image {
+  height: 200px;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+
+    .shop-card:hover & {
+      transform: scale(1.05);
+    }
+  }
+}
+
+.shop-content {
+  padding: 25px;
+
+  h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: 600;
+  }
+}
+
+.shop-info {
+  margin-bottom: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  color: #555;
+
+  .icon {
+    width: 18px;
+    height: 18px;
+    fill: #007bff;
+    margin-right: 10px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  a {
+    color: #007bff;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.shop-description {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.shop-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  .map-btn, .email-btn {
+    padding: 10px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+
+  .map-btn {
+    background: #007bff;
+    color: white;
+
+    .icon {
+      width: 16px;
+      height: 16px;
+      fill: white;
+      margin-right: 8px;
+    }
+
+    &:hover {
+      background: #0056b3;
+    }
+  }
+
+  .email-btn {
+    background: #f8f9fa;
+    color: #333;
+    border: 1px solid #dee2e6;
+
+    &:hover {
+      background: #e9ecef;
+    }
+  }
+}
+
+.no-shops {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+  font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+  .shops-header {
+    h1 {
+      font-size: 2rem;
+    }
+  }
+
+  .shops-container {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-card {
+    max-width: 100%;
+  }
+}

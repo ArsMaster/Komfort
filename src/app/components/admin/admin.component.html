@@ -1,0 +1,20 @@
+<div class="admin-container">
+  <nav class="admin-nav">
+    <div class="admin-nav-top">
+      <h2 class="admin-logo">ADMIN</h2>
+    </div>
+    
+    <div class="admin-nav-sections">
+      <a routerLink="/admin/home" routerLinkActive="active">Главная</a>
+      <a routerLink="/admin/catalog" routerLinkActive="active">Категории</a>
+      <a routerLink="/admin/products" routerLinkActive="active">Товары</a>
+      <a routerLink="/admin/shops" routerLinkActive="active">Магазины</a>
+      <a routerLink="/admin/contacts" routerLinkActive="active">Контакты</a>
+      <a routerLink="/" class="nav-to-site">← На сайт</a>
+    </div>
+  </nav>
+  
+  <div class="admin-content">
+    <router-outlet></router-outlet>
+  </div>
+</div>
