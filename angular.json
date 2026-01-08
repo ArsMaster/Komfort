@@ -21,24 +21,25 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
+            "outputPath": "dist/komfort",
             "baseHref": "/",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-              "assets": [
+            "assets": [
               {
                 "glob": "**/*",
-               "input": "src/assets"
-             }
+                "input": "src/assets"
+              }
             ],
             "styles": [
               "src/styles.scss"
-              ],
-    
+            ],
             "outputMode": "static"
           },
           "configurations": {
             "production": {
+              "outputPath": "dist/komfort",
               "budgets": [
                 {
                   "type": "initial",
@@ -54,6 +55,7 @@
               "outputHashing": "all"
             },
             "development": {
+              "outputPath": "dist/komfort",
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
