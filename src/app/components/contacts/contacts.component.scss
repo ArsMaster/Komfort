@@ -3,7 +3,7 @@
   background: #f8f9fa;
   
   .container {
-    max-width: 1200px; // Добавьте этот контейнер
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
   }
@@ -12,270 +12,219 @@
     text-align: center;
     margin-bottom: 20px;
     color: #333;
-    font-size: 42px; // Добавьте размер как в "О компании"
-    font-weight: 800; // Добавьте жирность как в "О компании"
-    text-transform: uppercase; // Добавьте как в "О компании"
-    letter-spacing: 1px; // Добавьте как в "О компании"
+    font-size: 42px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
   
   .contacts-description {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 50px;
     color: #666;
-    font-size: 18px; // Можно добавить для красоты
-    max-width: 800px; // Ограничим ширину описания
+    font-size: 18px;
+    max-width: 800px;
     margin-left: auto;
     margin-right: auto;
   }
   
   .contacts-wrapper {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-    max-width: 900px; // Добавьте ограничение ширины как в "О компании"
-    margin: 0 auto; // Центрируем
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+    max-width: 900px;
+    margin: 0 auto 40px;
     
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
-      max-width: 100%; // На мобильных полная ширина
+      gap: 20px;
+      max-width: 100%;
     }
   }
   
-  .contacts-info {
-    .contact-item {
+  .contacts-column {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+  
+  .contact-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 25px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+    
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .contact-icon {
+      font-size: 28px;
+      margin-right: 20px;
+      min-width: 40px;
       display: flex;
-      align-items: flex-start;
-      margin-bottom: 25px;
-      padding: 20px; // Немного увеличил padding
-      background: white;
-      border-radius: 12px; // Увеличил радиус как в "О компании"
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1); // Усилил тень как в "О компании"
-      cursor: pointer;
-      transition: transform 0.3s;
-      
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-      }
-      
-      .contact-icon {
-        font-size: 24px;
-        margin-right: 15px;
-        min-width: 40px;
-      }
-      
-      h3 {
-        margin: 0 0 8px 0; // Немного увеличил отступ
-        color: #333;
-        font-size: 18px; // Добавил размер
-        font-weight: 600; // Добавил жирность
-      }
-      
-      .contact-value {
-        margin: 0;
-        color: #333; // Изменил с #555 на #333 для лучшей читаемости
-        font-size: 16px;
-        font-weight: 500; // Добавил легкую жирность
-      }
+      align-items: center;
+      justify-content: center;
+    }
+    
+    h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    .contact-value {
+      margin: 0;
+      color: #555;
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 1.5;
     }
   }
   
   .social-links {
-    margin-top: 30px;
-    padding: 20px;
+    padding: 25px;
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     
     h3 {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
       color: #333;
-      font-size: 18px;
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
     }
     
     .social-icons {
       display: flex;
-      gap: 15px;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
       
       .social-link {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 45px;
-        height: 45px;
-        background: #4267B2;
-        color: white;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         text-decoration: none;
         font-weight: bold;
         transition: all 0.3s;
         
         &:hover {
-          transform: scale(1.1);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+          transform: scale(1.15);
+          box-shadow: 0 6px 20px rgba(0,0,0,0.2);
         }
         
-        &[title*="Telegram"] {
+        svg {
+          width: 26px;
+          height: 26px;
+          stroke: white;
+          stroke-width: 2; // Добавьте это!
+        }
+        
+        // УДАЛИТЕ эти старые стили - они вызывают конфликт
+        // &[href*="instagram"] {
+        //   background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D);
+        // }
+        // 
+        // &[href*="telegram"] {
+        //   background: #0088cc;
+        // }
+        // 
+        // &[href*="whatsapp"] {
+        //   background: #25D366;
+        // }
+        // 
+        // &[href*="facebook"] {
+        //   background: #4267B2;
+        // }
+        // 
+        // &[href*="vk.com"] {
+        //   background: #4C75A3;
+        // }
+        
+        // Вместо них используйте новые стили:
+        &[href*="instagram"],
+        &[href*="insta"] {
+          background:  #718096;
+        }
+        
+        &[href*="telegram"],
+        &[href*="t.me"] {
           background: #0088cc;
         }
         
-        &[title*="WhatsApp"] {
+        &[href*="whatsapp"],
+        &[href*="wa.me"] {
           background: #25D366;
         }
-      }
-    }
-  }
-  
-  .contact-form {
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    
-    h3 {
-      margin-top: 0;
-      margin-bottom: 15px;
-      color: #333;
-      font-size: 24px;
-      font-weight: 600;
-    }
-    
-    p {
-      color: #666;
-      margin-bottom: 25px;
-      font-size: 16px;
-    }
-    
-    .form-group {
-      margin-bottom: 20px;
-      
-      label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 500;
-        color: #555;
-        font-size: 15px;
-      }
-      
-      .form-input {
-        width: 100%;
-        padding: 12px 15px;
-        border: 2px solid #e2e8f0; // Изменил border
-        border-radius: 8px; // Увеличил радиус
-        font-size: 16px;
-        transition: border-color 0.3s;
         
-        &:focus {
-          outline: none;
-          border-color: #4267B2;
-          box-shadow: 0 0 0 3px rgba(66, 103, 178, 0.1);
+        &[href*="facebook"] {
+          background: #4267B2;
+        }
+        
+        &[href*="vk.com"] {
+          background: #4C75A3;
+        }
+        
+        &[href*="youtube"] {
+          background: #FF0000;
+        }
+        
+        // Дефолтный стиль для других соцсетей
+        &:not([href*="instagram"]):not([href*="telegram"]):not([href*="whatsapp"]):not([href*="facebook"]):not([href*="vk.com"]):not([href*="youtube"]) {
+          background: #718096;
         }
       }
     }
-    
-    .checkbox-group {
-      margin: 25px 0;
-      display: flex;
-      align-items: flex-start; // Изменил на flex-start для лучшего выравнивания
-      
-      input[type="checkbox"] {
-        margin-right: 10px;
-        margin-top: 3px;
-      }
-      
-      label {
-        margin: 0;
-        font-size: 14px;
-        color: #666;
-        line-height: 1.4;
-      }
-    }
-    
-    .submit-btn {
-      width: 100%;
-      padding: 15px;
-      background: #ff6b6b; // Использую цвет из "О компании"
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.3s;
-      
-      &:hover:not(:disabled) {
-        background: #f54a4a;
-      }
-      
-      &:disabled {
-        background: #cccccc;
-        cursor: not-allowed;
-      }
-    }
   }
   
-  .success-message {
-    text-align: center;
-    padding: 40px;
+  .working-hours {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 25px;
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    
-    .success-icon {
-      font-size: 48px;
-      color: #28a745;
-      margin-bottom: 20px;
-    }
+    text-align: center;
     
     h3 {
+      margin: 0 0 15px 0;
       color: #333;
-      margin-bottom: 10px;
-      font-size: 24px;
+      font-size: 20px;
+      font-weight: 700;
     }
     
     p {
-      color: #666;
-      margin-bottom: 20px;
+      margin: 8px 0;
+      color: #555;
       font-size: 16px;
-    }
-    
-    .submit-btn {
-      margin-top: 15px;
-      background: #4267B2;
-      
-      &:hover {
-        background: #365899;
-      }
-    }
-  }
-  
-  .map-container {
-    margin-top: 30px;
-    
-    h3 {
-      margin-bottom: 15px;
-      color: #333;
-      font-size: 18px;
-    }
-    
-    .map-embed {
-      width: 100%;
-      height: 200px;
-      background: #f0f0f0;
-      border-radius: 8px;
-      overflow: hidden;
+      font-weight: 500;
     }
   }
 }
 
-// Адаптивность
+// Адаптивность - УДАЛИТЕ дублирующие стили!
 @media (max-width: 768px) {
   .contacts-section {
     padding: 40px 0;
     
     .section-title {
       font-size: 32px;
-      margin-bottom: 15px;
     }
     
     .contacts-description {
@@ -283,16 +232,55 @@
       margin-bottom: 30px;
     }
     
-    .contacts-wrapper {
-      gap: 30px;
-    }
-    
-    .contact-form {
-      padding: 20px;
-    }
-    
     .contact-item {
-      padding: 15px;
+      padding: 20px;
+      
+      .contact-icon {
+        font-size: 24px;
+        margin-right: 15px;
+      }
+      
+      h3 {
+        font-size: 18px;
+      }
+      
+      .contact-value {
+        font-size: 16px;
+      }
+    }
+    
+    .social-links {
+      padding: 20px;
+      
+      h3 {
+        font-size: 18px;
+      }
+      
+      .social-icons {
+        gap: 15px;
+        
+        .social-link {
+          width: 45px;
+          height: 45px;
+          
+          svg {
+            width: 24px;
+            height: 24px;
+          }
+        }
+      }
+    }
+    
+    .working-hours {
+      padding: 20px;
+      
+      h3 {
+        font-size: 18px;
+      }
+      
+      p {
+        font-size: 15px;
+      }
     }
   }
 }
@@ -303,82 +291,30 @@
       font-size: 28px;
     }
     
-    .contacts-wrapper {
-      gap: 20px;
+    .contacts-description {
+      font-size: 15px;
     }
     
-    .contact-form {
+    .contact-item {
       padding: 15px;
       
-      h3 {
-        font-size: 20px;
+      .contact-icon {
+        font-size: 22px;
       }
     }
-  }
-}
-
-// Добавьте эти стили в конец вашего SCSS файла
-
-.error-message {
-  background-color: #f8d7da;
-  color: #721c24;
-  padding: 12px;
-  border-radius: 4px;
-  margin: 15px 0;
-  border: 1px solid #f5c6cb;
-  font-size: 14px;
-}
-
-.loading-indicator {
-  text-align: center;
-  padding: 40px 20px;
-  
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 15px;
-  }
-  
-  p {
-    color: #666;
-    margin: 0;
-  }
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.success-hint {
-  font-size: 12px;
-  color: #666;
-  margin-top: 10px;
-  font-style: italic;
-}
-
-// Стили для обязательных полей
-.form-group label:after {
-  content: ' *';
-  color: #dc3545;
-}
-
-// Стиль для заблокированной кнопки
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-// Стиль для ссылки в чекбоксе
-.checkbox-group a {
-  color: #007bff;
-  text-decoration: underline;
-  
-  &:hover {
-    color: #0056b3;
+    
+    .social-links {
+      .social-icons {
+        .social-link {
+          width: 40px;
+          height: 40px;
+          
+          svg {
+            width: 22px;
+            height: 22px;
+          }
+        }
+      }
+    }
   }
 }

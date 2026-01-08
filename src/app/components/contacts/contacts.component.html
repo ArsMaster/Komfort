@@ -3,11 +3,12 @@
   <div class="container">
     <h1 class="section-title">КОНТАКТЫ</h1>
     <p class="contacts-description">
-      Свяжитесь с нами или оставьте заявку, мы перезвоним и вышлем прайс-лист.
+      Свяжитесь с нами любым удобным способом
     </p>
     
     <div class="contacts-wrapper">
-      <div class="contacts-info">
+      <!-- Левая колонка: Телефон и Email -->
+      <div class="contacts-column">
         <div class="contact-item" (click)="callPhone()">
           <span class="contact-icon">📞</span>
           <div>
@@ -23,7 +24,10 @@
             <p class="contact-value">{{ contacts.email }}</p>
           </div>
         </div>
-        
+      </div>
+      
+      <!-- Правая колонка: Офис и Соцсети -->
+      <div class="contacts-column">
         <div class="contact-item">
           <span class="contact-icon">🏢</span>
           <div>
@@ -33,103 +37,30 @@
         </div>
         
         <div class="social-links">
-  <h3>Мы в соцсетях:</h3>
-  <div class="social-icons">
-    @for (social of contacts.social; track social.url) {
-      <a [href]="social.url" class="social-link" target="_blank">
-        <!-- Instagram -->
-        @if (social.name.toLowerCase().includes('insta')) {
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram-icon lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-        }
-        <!-- Telegram -->
-        @else if (social.name.toLowerCase().includes('telegram') || social.name.toLowerCase().includes('tg')) {
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-icon lucide-send"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
-        }
-        <!-- WhatsApp -->
-        @else if (social.name.toLowerCase().includes('whatsapp') || social.name.toLowerCase().includes('wa')) {
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle-icon lucide-message-circle"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
-        }
-        <!-- Дефолтная иконка -->
-        @else {
-          <span>{{ social.icon }}</span>
-        }
-      </a>
-    }
-  </div>
-</div>
-      </div>
-      
-      <div class="contact-form">
-        <!-- Показываем форму, если не отправлено и не загружается -->
-        @if (!isSubmitted && !isLoading) {
-          <form (ngSubmit)="onSubmit()">
-            
-            <!-- Поле имени -->
-            <div class="form-group">
-              <label>Ваше имя *</label>
-              <input type="text" 
-                     [(ngModel)]="contactForm.name" 
-                     name="name"
-                     class="form-input"
-                     placeholder="Введите ваше имя"
-                     required>
-            </div>
-            
-            <!-- Поле телефона -->
-            <div class="form-group">
-              <label>Телефон *</label>
-              <input type="tel" 
-                     [(ngModel)]="contactForm.phone" 
-                     name="phone"
-                     class="form-input"
-                     placeholder="+7 (999) 123-45-67"
-                     required>
-            </div>
-            
-            <!-- Чекбокс согласия -->
-            <div class="checkbox-group">
-              <input type="checkbox" 
-                     id="agree" 
-                     [(ngModel)]="contactForm.agree" 
-                     name="agree"
-                     required>
-              <label for="agree">
-                Согласен(-а) с 
-                <a href="/privacy-policy" target="_blank">политикой конфиденциальности</a>
-              </label>
-            </div>
-            
-            <!-- Сообщение об ошибке -->
-            @if (errorMessage) {
-              <div class="error-message">
-                {{ errorMessage }}
-              </div>
+          <h3>Мы в соцсетях:</h3>
+          <div class="social-icons">
+            @for (social of contacts.social; track social.url) {
+              <a [href]="social.url" class="social-link" target="_blank">
+                <!-- Instagram -->
+                @if (social.name.toLowerCase().includes('insta')) {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram-icon lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                }
+                <!-- Telegram -->
+                @else if (social.name.toLowerCase().includes('telegram') || social.name.toLowerCase().includes('tg')) {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-icon lucide-send"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
+                }
+                <!-- WhatsApp -->
+                @else if (social.name.toLowerCase().includes('whatsapp') || social.name.toLowerCase().includes('wa')) {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle-icon lucide-message-circle"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
+                }
+                <!-- Дефолтная иконка -->
+                @else {
+                  <span>{{ social.icon }}</span>
+                }
+              </a>
             }
-            
-            <!-- Кнопка отправки -->
-            <button type="submit" class="submit-btn" [disabled]="isLoading">
-              Отправить заявку
-            </button>
-          </form>
-        }
-        
-        <!-- Индикатор загрузки -->
-        @if (isLoading) {
-          <div class="loading-indicator">
-            <div class="spinner"></div>
-            <p>Отправка заявки...</p>
           </div>
-        }
-        
-        <!-- Сообщение об успехе -->
-        @if (isSubmitted && !isLoading) {
-          <div class="success-message">
-            <div class="success-icon">✓</div>
-            <h3>Спасибо за заявку!</h3>
-            <p>Мы свяжемся с вами в ближайшее время.</p>
-            <p class="success-hint">Форма автоматически очистится через 5 секунд</p>
-          </div>
-        }
+        </div>
       </div>
     </div>
   </div>
