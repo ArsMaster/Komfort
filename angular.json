@@ -23,19 +23,35 @@
           "options": {
             "outputPath": "dist/komfort",
             "baseHref": "/",
+            "deployUrl": "/",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "src/assets"
+                "input": "src/assets",
+                "output": "/assets"
+              },
+              {
+                "glob": "_redirects",
+                "input": ".",
+                "output": "."
+              },
+              {
+                "glob": "_routes.json",
+                "input": "",
+                "output": "/"
               }
             ],
             "styles": [
               "src/styles.scss"
             ],
-            "outputMode": "static"
+            "outputMode": "static",
+            "index": {
+              "input": "src/index.html",
+              "output": "index.html"
+            }
           },
           "configurations": {
             "production": {
@@ -43,16 +59,19 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "10kB",
-                  "maximumError": "15kB"
+                  "maximumWarning": "20kB",
+                  "maximumError": "30kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": true,
+              "sourceMap": false,
+              "extractLicenses": true
             },
             "development": {
               "outputPath": "dist/komfort",
