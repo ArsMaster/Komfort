@@ -1,12 +1,6 @@
 [build]
-  command = "npm run build"
-  publish = "dist/komfort/browser"
+  command = "npm run build:prod"
+  publish = "dist/browser"
 
 [build.environment]
-  NODE_VERSION = "18.17.0"
-
-# Перенаправления для Angular Router
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+  NODE_VERSION = "20.19.0"
