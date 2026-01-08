@@ -1,6 +1,11 @@
-[build]
+  [build]
   command = "npm run build:prod"
-  publish = "dist/browser"
+  publish = "dist/komfort/browser"
+
+# Явно отключаем проблемный плагин
+[[plugins]]
+  package = "@netlify/angular-runtime"
+  enabled = false
 
 [build.environment]
   NODE_VERSION = "20.19.0"
