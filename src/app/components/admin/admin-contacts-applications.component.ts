@@ -106,5 +106,6 @@ export class AdminContactsApplicationsComponent implements OnInit {
   }
 
   exportToCSV(): void {
+    // Реализуйте при необходимости
   }
 }

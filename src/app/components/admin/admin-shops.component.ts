@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ShopsService } from '../../services/shops.service';
@@ -37,7 +37,8 @@ export class AdminShopsComponent implements OnInit {
 
   constructor(
     private shopsService: ShopsService,
-    private fileUploadService: FileUploadService
+    private fileUploadService: FileUploadService,
+    private cdr: ChangeDetectorRef // ← ДОБАВЬТЕ ЭТО
   ) {}
 
   ngOnInit(): void {
@@ -46,6 +47,7 @@ export class AdminShopsComponent implements OnInit {
 
   loadShops(): void {
     this.shops = this.shopsService.getShops();
+    this.cdr.detectChanges(); // ← ОБНОВИТЕ ОТОБРАЖЕНИЕ
   }
 
   startAddShop(): void {
@@ -63,6 +65,8 @@ export class AdminShopsComponent implements OnInit {
       email: '',
       workingHours: ''
     };
+    
+    this.cdr.detectChanges(); // ← ОБНОВИТЕ ОТОБРАЖЕНИЕ
   }
 
   startEditShop(shop: Shop): void {
@@ -70,6 +74,7 @@ export class AdminShopsComponent implements OnInit {
     this.editingShop = { ...shop };
     this.imagePreview = shop.imageUrl || '/assets/default-shop.jpg';
     this.selectedFileName = '';
+    this.cdr.detectChanges(); // ← ОБНОВИТЕ ОТОБРАЖЕНИЕ
   }
 
   onFileSelected(event: Event): void {
@@ -104,6 +109,7 @@ export class AdminShopsComponent implements OnInit {
           } else {
             this.newShop.imageFile = file;
           }
+          this.cdr.detectChanges(); // ← ОБНОВИТЕ ОТОБРАЖЕНИЕ
         })
         .catch(error => {
           console.error('Ошибка при чтении файла:', error);
@@ -131,81 +137,141 @@ export class AdminShopsComponent implements OnInit {
     if (this.fileInput) {
       this.fileInput.nativeElement.value = '';
     }
+    
+    this.cdr.detectChanges(); // ← ОБНОВИТЕ ОТОБРАЖЕНИЕ
   }
 
   async saveShop(): Promise<void> {
+    console.log('🔄 Начало сохранения магазина');
+    
     try {
       this.isUploading = true;
+      this.cdr.detectChanges(); // ← НЕМЕДЛЕННО ОБНОВИТЕ ОТОБРАЖЕНИЕ
       
       let finalImageUrl = '';
       
       // Если есть загруженный файл, загружаем его на сервер
       if (this.newShop.imageFile) {
-        const result = await lastValueFrom(
-          this.fileUploadService.uploadShopImage(this.newShop.imageFile)
-        );
-        finalImageUrl = result.url;
+        console.log('📤 Загрузка файла изображения...');
+        try {
+          const result = await lastValueFrom(
+            this.fileUploadService.uploadShopImage(this.newShop.imageFile)
+          );
+          finalImageUrl = result.url;
+          console.log('✅ Файл загружен:', finalImageUrl);
+        } catch (uploadError) {
+          console.error('❌ Ошибка загрузки файла:', uploadError);
+          throw new Error('Не удалось загрузить изображение');
+        }
       } else if (this.editingShop?.imageUrl) {
         // Используем существующее изображение при редактировании
         finalImageUrl = this.editingShop.imageUrl;
+        console.log('🖼️ Используем существующее изображение');
       } else if (this.newShop.imageUrl) {
         // Используем URL из поля ввода
         finalImageUrl = this.newShop.imageUrl;
+        console.log('🔗 Используем URL из поля');
       } else {
         // Дефолтное изображение
         finalImageUrl = '/assets/default-shop.jpg';
+        console.log('🏷️ Используем дефолтное изображение');
       }
 
       if (this.editingShop) {
-        // Обновление существующего магазина
-        const updatedShop: Shop = {
-          ...this.editingShop,
-          imageUrl: finalImageUrl,
+        console.log('✏️ Редактирование магазина:', this.editingShop.title);
+        console.log('📝 Данные для сохранения:', {
           title: this.editingShop.title,
           address: this.editingShop.address,
-          description: this.editingShop.description,
-          phone: this.editingShop.phone,
-          email: this.editingShop.email,
-          workingHours: this.editingShop.workingHours
-        };
-        this.shopsService.updateShop(updatedShop);
+          imageUrl: finalImageUrl
+        });
+        
+        await this.shopsService.updateShop(
+          this.editingShop.id, 
+          {
+            title: this.editingShop.title,
+            address: this.editingShop.address,
+            description: this.editingShop.description,
+            imageUrl: finalImageUrl,
+            phone: this.editingShop.phone,
+            email: this.editingShop.email,
+            workingHours: this.editingShop.workingHours
+          }
+        );
+        console.log('✅ Магазин обновлен в сервисе');
+        alert(`Магазин "${this.editingShop.title}" обновлен!`);
       } else {
-        // Добавление нового магазина
-        const shop: Shop = {
+        console.log('➕ Добавление нового магазина');
+        console.log('📝 Данные:', {
+          title: this.newShop.title,
+          address: this.newShop.address,
+          imageUrl: finalImageUrl
+        });
+        
+        const newShop = await this.shopsService.addShop({
           title: this.newShop.title,
           address: this.newShop.address,
           description: this.newShop.description,
           imageUrl: finalImageUrl,
           phone: this.newShop.phone,
           email: this.newShop.email,
-          workingHours: this.newShop.workingHours,
-          id: this.generateId()
-        };
-        this.shopsService.addShop(shop);
+          workingHours: this.newShop.workingHours
+        });
+        
+        console.log('✅ Новый магазин добавлен:', newShop);
+        alert(`Магазин "${newShop.title}" добавлен!`);
       }
       
-      this.cancelEdit();
-      this.loadShops();
+      console.log('✅ Все операции завершены успешно');
+      
+      // ЯВНО сбросить перед закрытием формы
+      this.isUploading = false;
+      this.cdr.detectChanges(); // ← ОБНОВИТЕ ПЕРЕД ЗАКРЫТИЕМ
+      
+      // Дать время Angular обновить DOM
+      setTimeout(() => {
+        this.cancelEdit();
+        this.loadShops();
+      }, 100);
+      
     } catch (error: any) {
-      console.error('Ошибка при сохранении магазина:', error);
+      console.error('❌ Ошибка при сохранении магазина:', error);
+      
+      // ОБЯЗАТЕЛЬНО сбросить при ошибке
+      this.isUploading = false;
+      this.cdr.detectChanges();
       
       // Проверяем тип ошибки
       if (error.status === 413) {
         alert('Файл слишком большой. Максимальный размер: 5MB');
       } else if (error.status === 415) {
         alert('Неподдерживаемый формат файла');
+      } else if (error.message) {
+        alert(`Ошибка: ${error.message}`);
       } else {
         alert('Произошла ошибка при сохранении магазина. Пожалуйста, попробуйте снова.');
       }
     } finally {
-      this.isUploading = false;
+      // Дополнительная защита на случай если блок try-catch не сработал
+      setTimeout(() => {
+        this.isUploading = false;
+        this.cdr.detectChanges();
+        console.log('🔄 finally блок: isUploading сброшен');
+      }, 1000);
     }
   }
 
-  deleteShop(id: string): void {
+  async deleteShop(id: string): Promise<void> {
     if (confirm('Вы уверены, что хотите удалить этот магазин?')) {
-      this.shopsService.deleteShop(id);
-      this.loadShops();
+      try {
+        const deleted = await this.shopsService.deleteShop(id);
+        if (deleted) {
+          alert('Магазин удален!');
+          this.loadShops();
+        }
+      } catch (error) {
+        console.error('Ошибка удаления магазина:', error);
+        alert('Не удалось удалить магазин');
+      }
     }
   }
 
@@ -230,6 +296,9 @@ export class AdminShopsComponent implements OnInit {
     if (this.fileInput) {
       this.fileInput.nativeElement.value = '';
     }
+    
+    this.cdr.detectChanges(); // ← ОБНОВИТЕ ОТОБРАЖЕНИЕ
+    console.log('🚪 Форма редактирования закрыта');
   }
 
   validateForm(): boolean {
@@ -243,9 +312,5 @@ export class AdminShopsComponent implements OnInit {
     if (!text) return '';
     if (text.length <= limit) return text;
     return text.substr(0, limit) + '...';
-  }
-
-  private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 }

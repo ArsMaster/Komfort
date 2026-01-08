@@ -18,7 +18,7 @@ export class AdminContactsComponent implements OnInit {
   constructor(private contactService: ContactService) {}
 
   ngOnInit(): void {
-    this.contacts = { ...this.contactService.getContacts()() };
+    this.contacts = { ...this.contactService.getContacts() };
   }
 
   addSocial(): void {

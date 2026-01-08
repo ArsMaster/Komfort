@@ -190,7 +190,9 @@ export class AdminCatalogComponent implements OnInit, OnDestroy {
     this.clearFile();
   }
 
-  saveCategory(): void {
+  // === ИСПРАВЛЕННЫЕ МЕТОДЫ (добавлены async/await) ===
+
+  async saveCategory(): Promise<void> {
     if (!this.currentCategory.title?.trim()) {
       this.showNotification('error', 'Пожалуйста, укажите название категории');
       return;
@@ -222,50 +224,63 @@ export class AdminCatalogComponent implements OnInit, OnDestroy {
     
     this.isLoading.set(true);
     
-    setTimeout(() => {
-      try {
-        if (this.editingCategory && this.currentCategory.id) {
-          const updatedCategory = this.catalogService.updateCategory(
-            this.currentCategory.id, 
-            this.currentCategory
-          );
-          
-          if (updatedCategory) {
-            this.showNotification('success', `Категория "${updatedCategory.title}" успешно обновлена!`);
-          }
-        } else {
-          const newCategory = this.catalogService.addCategory({
-            title: this.currentCategory.title!,
-            image: this.currentCategory.image || '',
-            slug: this.currentCategory.slug!,
-            order: this.currentCategory.order || 0,
-            isActive: this.currentCategory.isActive ?? true
-          });
-          
-          this.showNotification('success', `Категория "${newCategory.title}" успешно добавлена!`);
-        }
+    try {
+      if (this.editingCategory && this.currentCategory.id) {
+        // Используем await для асинхронного метода
+        const updatedCategory = await this.catalogService.updateCategory(
+          this.currentCategory.id, 
+          this.currentCategory as Partial<CatalogCategory>
+        );
         
-        this.cancelEdit();
-      } catch (error) {
-        console.error('Ошибка при сохранении категории:', error);
-        this.showNotification('error', 'Произошла ошибка при сохранении категории');
-      } finally {
-        this.isLoading.set(false);
+        if (updatedCategory) {
+          // updatedCategory теперь объект, а не Promise
+          this.showNotification('success', `Категория "${updatedCategory.title}" успешно обновлена!`);
+        } else {
+          this.showNotification('error', 'Не удалось обновить категорию');
+        }
+      } else {
+        // Используем await для асинхронного метода
+        const newCategory = await this.catalogService.addCategory({
+          title: this.currentCategory.title!,
+          image: this.currentCategory.image || '',
+          slug: this.currentCategory.slug!,
+          order: this.currentCategory.order || 0,
+          isActive: this.currentCategory.isActive ?? true
+        });
+        
+        // newCategory теперь объект, а не Promise
+        this.showNotification('success', `Категория "${newCategory.title}" успешно добавлена!`);
       }
-    }, 500);
+      
+      this.cancelEdit();
+    } catch (error) {
+      console.error('Ошибка при сохранении категории:', error);
+      this.showNotification('error', 'Произошла ошибка при сохранении категории');
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
-  deleteCategory(category: CatalogCategory): void {
+  async deleteCategory(category: CatalogCategory): Promise<void> {
     if (confirm(`Удалить категорию "${category.title}"?\nЭта операция необратима.`)) {
       this.isLoading.set(true);
       
-      setTimeout(() => {
-        const deleted = this.catalogService.deleteCategory(category.id);
+      try {
+        // Используем await для асинхронного метода
+        const deleted = await this.catalogService.deleteCategory(category.id);
+        
+        // deleted теперь boolean, а не Promise
         if (deleted) {
           this.showNotification('success', `Категория "${category.title}" удалена`);
+        } else {
+          this.showNotification('error', 'Не удалось удалить категорию');
         }
+      } catch (error) {
+        console.error('Ошибка при удалении категории:', error);
+        this.showNotification('error', 'Ошибка при удалении категории');
+      } finally {
         this.isLoading.set(false);
-      }, 300);
+      }
     }
   }
 

@@ -3,7 +3,7 @@
   background: #f8f9fa;
   
   .container {
-    max-width: 1200px;
+    max-width: 1200px; // Добавьте этот контейнер
     margin: 0 auto;
     padding: 0 20px;
   }
@@ -12,18 +12,18 @@
     text-align: center;
     margin-bottom: 20px;
     color: #333;
-    font-size: 42px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    font-size: 42px; // Добавьте размер как в "О компании"
+    font-weight: 800; // Добавьте жирность как в "О компании"
+    text-transform: uppercase; // Добавьте как в "О компании"
+    letter-spacing: 1px; // Добавьте как в "О компании"
   }
   
   .contacts-description {
     text-align: center;
     margin-bottom: 40px;
     color: #666;
-    font-size: 18px;
-    max-width: 800px;
+    font-size: 18px; // Можно добавить для красоты
+    max-width: 800px; // Ограничим ширину описания
     margin-left: auto;
     margin-right: auto;
   }
@@ -32,12 +32,12 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 40px;
-    max-width: 900px;
-    margin: 0 auto;
+    max-width: 900px; // Добавьте ограничение ширины как в "О компании"
+    margin: 0 auto; // Центрируем
     
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
-      max-width: 100%;
+      max-width: 100%; // На мобильных полная ширина
     }
   }
   
@@ -46,10 +46,10 @@
       display: flex;
       align-items: flex-start;
       margin-bottom: 25px;
-      padding: 20px;
+      padding: 20px; // Немного увеличил padding
       background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      border-radius: 12px; // Увеличил радиус как в "О компании"
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1); // Усилил тень как в "О компании"
       cursor: pointer;
       transition: transform 0.3s;
       
@@ -65,17 +65,17 @@
       }
       
       h3 {
-        margin: 0 0 8px 0;
+        margin: 0 0 8px 0; // Немного увеличил отступ
         color: #333;
-        font-size: 18px;
-        font-weight: 600;
+        font-size: 18px; // Добавил размер
+        font-weight: 600; // Добавил жирность
       }
       
       .contact-value {
         margin: 0;
-        color: #333;
+        color: #333; // Изменил с #555 на #333 для лучшей читаемости
         font-size: 16px;
-        font-weight: 500;
+        font-weight: 500; // Добавил легкую жирность
       }
     }
   }
@@ -160,8 +160,8 @@
       .form-input {
         width: 100%;
         padding: 12px 15px;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
+        border: 2px solid #e2e8f0; // Изменил border
+        border-radius: 8px; // Увеличил радиус
         font-size: 16px;
         transition: border-color 0.3s;
         
@@ -176,7 +176,7 @@
     .checkbox-group {
       margin: 25px 0;
       display: flex;
-      align-items: flex-start;
+      align-items: flex-start; // Изменил на flex-start для лучшего выравнивания
       
       input[type="checkbox"] {
         margin-right: 10px;
@@ -194,7 +194,7 @@
     .submit-btn {
       width: 100%;
       padding: 15px;
-      background: #ff6b6b;
+      background: #ff6b6b; // Использую цвет из "О компании"
       color: white;
       border: none;
       border-radius: 8px;
@@ -316,6 +316,8 @@
     }
   }
 }
+
+// Добавьте эти стили в конец вашего SCSS файла
 
 .error-message {
   background-color: #f8d7da;

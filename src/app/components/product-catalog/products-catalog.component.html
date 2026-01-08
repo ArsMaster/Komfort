@@ -1,3 +1,4 @@
+<!-- products-catalog.component.html -->
 <div class="catalog-container">
   <div class="catalog-header">
     <h1>Наш каталог товаров</h1>
@@ -11,30 +12,26 @@
         Все товары
       </button>
       
-      @for (category of categories(); track category.id) {
-        <button 
-          class="category-btn"
-          [class.active]="selectedCategory() === category.id"
-          (click)="filterByCategory(category.id, category.title)"
-        >
-          {{ category.title }}
-        </button>
-      }
+      <button 
+        *ngFor="let category of categories()" 
+        class="category-btn"
+        [class.active]="selectedCategory() === category.id"
+        (click)="filterByCategory(category.id, category.title)"
+      >
+        {{ category.title }}
+      </button>
     </div>
   </div>
 
   <div class="products-grid">
-    @for (product of filteredProducts(); track product.id) {
-      <app-product-card 
-        [product]="product"
-        [isAdmin]="false"
-      ></app-product-card>
-    }
+    <app-product-card 
+      *ngFor="let product of filteredProducts()" 
+      [product]="product"
+      [isAdmin]="false"
+    ></app-product-card>
   </div>
 
-  @if (filteredProducts().length === 0) {
-    <div class="no-products">
-      <p>В этой категории пока нет товаров</p>
-    </div>
-  }
+  <div class="no-products" *ngIf="filteredProducts().length === 0">
+    <p>В этой категории пока нет товаров</p>
+  </div>
 </div>

@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common'; // Добавьте CurrencyPipe
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { CatalogService } from '../../services/catalog.service';
@@ -10,7 +10,7 @@ import { ExcelService } from '../../services/excel.service';
 @Component({
   selector: 'app-admin-products',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule], // Добавьте CurrencyPipe сюда
   templateUrl: './admin-products.component.html',
   styleUrls: ['./admin-products.component.scss']
 })
@@ -29,7 +29,7 @@ export class AdminProductsComponent implements OnInit {
   imageUrlsText: string = '';
   
   currentProduct: Partial<Product> = this.getEmptyProduct();
-  isLoading = signal(false);
+  isLoading = signal(false); // Измените на signal
   
   constructor(
     private productService: ProductService,
@@ -57,7 +57,7 @@ export class AdminProductsComponent implements OnInit {
   }
 
   loadProducts(): void {
-    this.products.set(this.productService.getProducts()());
+    this.products.set(this.productService.getProductsArray());
   }
 
   loadCategories(): void {
@@ -70,7 +70,7 @@ export class AdminProductsComponent implements OnInit {
       description: '',
       price: 0,
       categoryId: undefined,
-      imageUrls: ['/assets/products/default.jpg'],
+      imageUrls: ['/assets/products/default.jpg'], // Исправьте путь
       stock: 0,
       features: []
     };
@@ -129,7 +129,7 @@ export class AdminProductsComponent implements OnInit {
   }
 
   updateImageUrlsFromFiles(): void {
-    const urls = this.selectedFiles.map(file => `/assets/products/${file.name}`);
+    const urls = this.selectedFiles.map(file => `/assets/products/${file.name}`); // Исправьте путь
     this.imageUrlsText = urls.join('\n');
     this.currentProduct.imageUrls = urls;
   }
@@ -138,7 +138,7 @@ export class AdminProductsComponent implements OnInit {
     this.selectedFiles = [];
     this.imagePreviews = [];
     this.imageUrlsText = '';
-    this.currentProduct.imageUrls = ['/assets/products/default.jpg'];
+    this.currentProduct.imageUrls = ['/assets/products/default.jpg']; // Исправьте путь
     if (this.multipleFileInput) {
       this.multipleFileInput.nativeElement.value = '';
     }
@@ -162,7 +162,7 @@ export class AdminProductsComponent implements OnInit {
     }
   }
 
-  saveProduct(): void {
+  async saveProduct(): Promise<void> {
     console.log('=== НАЧАЛО СОХРАНЕНИЯ ТОВАРА ===');
     
     // Валидация
@@ -270,7 +270,7 @@ export class AdminProductsComponent implements OnInit {
         alert(`Товар "${productData.name}" успешно обновлен!`);
       } else {
         console.log('Добавляем новый товар');
-        const newProduct = this.productService.addProduct(productData);
+        const newProduct = await this.productService.addProduct(productData);
         console.log('Новый товар создан:', newProduct);
         alert(`Товар "${newProduct.name}" успешно добавлен!`);
       }

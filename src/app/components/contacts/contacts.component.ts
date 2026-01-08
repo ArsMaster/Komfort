@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http'; // <-- Добавьте этот импорт
 import { ContactService } from '../../services/contact.service';
 import { ContactInfo } from '../../models/contact.model';
 
@@ -28,10 +28,10 @@ export class ContactsComponent implements OnInit {
   };
 
   isSubmitted = false;
-  errorMessage = '';
-  isLoading = false;
-  lastSubmitTime = 0;
-  MIN_SUBMIT_INTERVAL = 30000;
+  errorMessage = ''; // <-- Добавьте для отображения ошибок
+  isLoading = false; // <-- Добавьте для индикации загрузки
+  lastSubmitTime = 0; // <-- Для защиты от спама
+  MIN_SUBMIT_INTERVAL = 30000; // 30 секунд между отправками
 
   // Добавьте HttpClient в конструктор
   constructor(
@@ -44,7 +44,7 @@ export class ContactsComponent implements OnInit {
   }
 
   loadContacts(): void {
-    const contactsData = this.contactService.getContacts()();
+    const contactsData = this.contactService.getContacts();
     if (contactsData) {
       this.contacts = { ...contactsData };
     }

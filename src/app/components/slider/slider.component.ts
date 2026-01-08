@@ -1,3 +1,4 @@
+// slider.component.ts
 import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { HomePageService } from '../../services/homepage.service';
 
