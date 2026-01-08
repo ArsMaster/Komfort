@@ -9,7 +9,8 @@
     "test": "ng test",
     "serve:ssr:komfort": "node dist/komfort/server/server.mjs",
     "build:prod": "ng build --configuration=production --base-href=/",
-    "build:cloudflare": "ng build --configuration=production --base-href=/ && echo '/* /index.html 200' > dist/komfort/_redirects && echo '{\\version\\: 1, \\include\\: [\\/*\\], \\exclude\\: []}' > dist/komfort/_routes.json"
+    "build:cloudflare": "ng build --configuration=production --base-href=/ && echo '/* /index.html 200' > dist/komfort/_redirects && echo '{\\version\\: 1, \\include\\: [\\/*\\], \\exclude\\: []}' > dist/komfort/_routes.json",
+    "postbuild": "echo 'Cloudflare postbuild complete'"
   },
   "prettier": {
     "printWidth": 100,

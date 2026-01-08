@@ -36,11 +36,21 @@
               {
                 "glob": "_redirects",
                 "input": ".",
-                "output": "."
+                "output": "/"
               },
               {
                 "glob": "_routes.json",
-                "input": "",
+                "input": ".",
+                "output": "/"
+              },
+              {
+                "glob": "vercel.json",
+                "input": ".",
+                "output": "/"
+              },
+              {
+                "glob": "static.json",
+                "input": ".",
                 "output": "/"
               }
             ],
