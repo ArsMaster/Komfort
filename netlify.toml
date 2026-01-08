@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = "dist/komfort/browser"
+
+[build.environment]
+  NODE_VERSION = "18.17.0"
+
+# Перенаправления для Angular Router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
