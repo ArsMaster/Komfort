@@ -72,7 +72,7 @@ export class AdminShopsComponent implements OnInit {
   startEditShop(shop: Shop): void {
     this.isEditing = true;
     this.editingShop = { ...shop };
-    this.imagePreview = shop.imageUrl || '/assets/default-shop.jpg';
+    this.imagePreview = shop.imageUrl || 'assets/default-shop.jpg';
     this.selectedFileName = '';
     this.cdr.detectChanges(); // ← ОБНОВИТЕ ОТОБРАЖЕНИЕ
   }
@@ -173,7 +173,7 @@ export class AdminShopsComponent implements OnInit {
         console.log('🔗 Используем URL из поля');
       } else {
         // Дефолтное изображение
-        finalImageUrl = '/assets/default-shop.jpg';
+        finalImageUrl = 'assets/default-shop.jpg';
         console.log('🏷️ Используем дефолтное изображение');
       }
 

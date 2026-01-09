@@ -34,23 +34,13 @@
                 "output": "/assets"
               },
               {
-                "glob": "_redirects",
+                "glob": ".nojekyll",
                 "input": ".",
                 "output": "/"
               },
               {
-                "glob": "_routes.json",
-                "input": ".",
-                "output": "/"
-              },
-              {
-                "glob": "vercel.json",
-                "input": ".",
-                "output": "/"
-              },
-              {
-                "glob": "static.json",
-                "input": ".",
+                "glob": "CNAME",
+                "input": "src",
                 "output": "/"
               }
             ],
@@ -66,6 +56,8 @@
           "configurations": {
             "production": {
               "outputPath": "dist/komfort",
+              "baseHref": "/Komfort/",
+              "deployUrl": "/Komfort/",
               "budgets": [
                 {
                   "type": "initial",
@@ -85,6 +77,8 @@
             },
             "development": {
               "outputPath": "dist/komfort",
+              "baseHref": "/",
+              "deployUrl": "/",
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true

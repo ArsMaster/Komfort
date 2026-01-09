@@ -324,7 +324,7 @@ async deleteCategory(id: number): Promise<boolean> {
       title: item.title || '',
       address: item.address || '',
       description: item.description || '',
-      imageUrl: item.image_url || '/assets/default-shop.jpg', // Значение по умолчанию
+      imageUrl: item.image_url || 'assets/default-shop.jpg', // Значение по умолчанию
       phone: item.phone || '',
       email: item.email || '',
       workingHours: item.working_hours || '',

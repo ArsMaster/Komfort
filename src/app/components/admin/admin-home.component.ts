@@ -124,7 +124,7 @@ export class AdminHomeComponent implements OnInit {
   // Обработчик ошибок изображений
   handleImageError(event: Event): void {
     const imgElement = event.target as HTMLImageElement;
-    imgElement.src = '/assets/default-slide.jpg';
+    imgElement.src = 'assets/default-slide.jpg';
   }
 
   // Методы для управления слайдами

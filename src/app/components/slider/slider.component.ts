@@ -41,12 +41,12 @@ export class SliderComponent implements OnInit, OnDestroy {
   private getDefaultSlides(): Slide[] {
     return [
       {
-        image: '/slide1.jpeg',
+        image: 'assets/slide1.jpeg',
         title: 'Все для вашего дома',
         description: 'Описание первого слайда'
       },
       {
-        image: '/slide2.jpg',
+        image: 'assets/slide2.jpg',
         title: 'Все для вашего дома',
         description: 'Описание второго слайда'
       }

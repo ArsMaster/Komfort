@@ -42,7 +42,7 @@ export class CatalogService {
       {
         id: 1,
         title: 'Гостиная',
-        image: '/livingroom.jpg',
+        image: 'assets/livingroom.jpg',
         slug: 'livingroom',
         order: 1,
         isActive: true,
@@ -51,7 +51,7 @@ export class CatalogService {
       {
         id: 2,
         title: 'Спальня',
-        image: '/bedroom.jpg',
+        image: 'assets/bedroom.jpg',
         slug: 'bedroom',
         order: 2,
         isActive: true,
@@ -60,7 +60,7 @@ export class CatalogService {
       {
         id: 3,
         title: 'Кухня',
-        image: '/kitchen.jpg',
+        image: 'assets/kitchen.jpg',
         slug: 'kitchen',
         order: 3,
         isActive: true,

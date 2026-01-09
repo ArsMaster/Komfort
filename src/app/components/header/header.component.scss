@@ -497,6 +497,7 @@ a.nav-heading, a.mobile-nav-heading {
   display: flex;
   align-items: center;
   gap: 10px; // Отступ между кнопками
+  margin-right: 10px;
   
   .desktop-admin-btn {
     width: 40px;
@@ -534,5 +535,12 @@ a.nav-heading, a.mobile-nav-heading {
   
   .mobile-admin-icon {
     fill: white !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-right .admin-btn-icon,
+  .header-right .desktop-admin-btn {
+    display: none !important;
   }
 }

@@ -260,22 +260,22 @@ export class HomePageService {
   private getDefaultSlides(): Slide[] {
     return [
       {
-        image: '/slide1.jpeg',
+        image: 'assets/slide1.jpeg',
         title: 'Все для вашего дома',
         description: 'Широкий ассортимент мебели и товаров для дома'
       },
       {
-        image: '/slide2.jpg',
+        image: 'assets/slide2.jpg',
         title: 'Качество и надежность',
         description: 'Только проверенные производители и материалы'
       },
       {
-        image: '/slide3.jpeg',
+        image: 'assets/slide3.jpeg',
         title: 'Доступные цены',
         description: 'Лучшее соотношение цены и качества на рынке'
       },
       {
-        image: '/slide4.jpg',
+        image: 'assets/slide4.jpg',
         title: 'Быстрая доставка',
         description: 'Доставка по всей России в кратчайшие сроки'
       }

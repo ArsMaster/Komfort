@@ -88,6 +88,6 @@ export class ProductCardComponent {
   }
 
   private getFallbackImage(): string {
-    return '/products/default.jpg';
+    return 'assets/products/default.jpg';
   }
 }

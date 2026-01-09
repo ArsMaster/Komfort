@@ -128,7 +128,7 @@ export class ExcelService {
 
   // Парсинг изображений
   private parseImages(images: any): string[] {
-    if (!images) return ['/assets/products/default.jpg'];
+    if (!images) return ['assets/products/default.jpg'];
     
     if (Array.isArray(images)) {
       return images;
@@ -142,7 +142,7 @@ export class ExcelService {
         .filter(img => img.length > 0);
     }
     
-    return ['/assets/products/default.jpg'];
+    return ['assets/products/default.jpg'];
   }
 
   // Создание Excel файла для скачивания (шаблон)
@@ -156,7 +156,7 @@ export class ExcelService {
         'Категория': 'Гостиная',
         'Количество': 5,
         'Характеристики': 'Раскладной;Ткань - велюр',
-        'Изображения': '/assets/products/sofa1.jpg'
+        'Изображения': 'assets/products/sofa1.jpg'
       },
       {
         'Название': 'Кровать "Орто"',
@@ -166,7 +166,7 @@ export class ExcelService {
         'Категория': 'Спальня',
         'Количество': 3,
         'Характеристики': 'Ортопедическое основание;Ящики для белья',
-        'Изображения': '/assets/products/bed1.jpg'
+        'Изображения': 'assets/products/bed1.jpg'
       }
     ];
     

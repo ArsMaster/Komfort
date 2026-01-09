@@ -70,7 +70,7 @@ export class AdminProductsComponent implements OnInit {
       description: '',
       price: 0,
       categoryId: undefined,
-      imageUrls: ['/assets/products/default.jpg'], // Исправьте путь
+      imageUrls: ['assets/products/default.jpg'], // Исправьте путь
       stock: 0,
       features: []
     };
@@ -138,7 +138,7 @@ export class AdminProductsComponent implements OnInit {
     this.selectedFiles = [];
     this.imagePreviews = [];
     this.imageUrlsText = '';
-    this.currentProduct.imageUrls = ['/assets/products/default.jpg']; // Исправьте путь
+    this.currentProduct.imageUrls = ['assets/products/default.jpg']; // Исправьте путь
     if (this.multipleFileInput) {
       this.multipleFileInput.nativeElement.value = '';
     }
@@ -254,7 +254,7 @@ export class AdminProductsComponent implements OnInit {
       price: this.currentProduct.price || 0,
       categoryId: categoryId, // Используем преобразованный ID
       categoryName: selectedCategory.title,
-      imageUrls: this.currentProduct.imageUrls || ['/assets/products/default.jpg'], // Исправьте путь
+      imageUrls: this.currentProduct.imageUrls || ['assets/products/default.jpg'], // Исправьте путь
       stock: this.currentProduct.stock || 0,
       features: features,
       createdAt: new Date(),
