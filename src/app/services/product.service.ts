@@ -22,6 +22,31 @@ export class ProductService {
   
   private storageKey = 'komfort_products';
 
+  private fixImageUrl(url: string): string {
+  // Если уже абсолютный URL
+  if (url.startsWith('http') || url.startsWith('//')) {
+    return url;
+  }
+  
+  // Определяем базовый путь
+  const basePath = window.location.hostname.includes('github.io') 
+    ? '/Komfort/'
+    : '/';
+  
+  // Если URL уже начинается с /, оставляем как есть
+  if (url.startsWith('/')) {
+    return url;
+  }
+  
+  // Если начинается с assets/, добавляем базовый путь
+  if (url.startsWith('assets/')) {
+    return basePath + url;
+  }
+  
+  // Иначе добавляем полный путь к изображениям товаров
+  return basePath + 'assets/products/' + url;
+}
+
   constructor() {
     // Эффект для автосохранения при изменении продуктов (только для local режима)
     effect(() => {
@@ -39,7 +64,7 @@ export class ProductService {
     console.log('=== ProductService инициализирован ===');
     
     // Проверяем, какой режим использовать
-    const mode = localStorage.getItem('komfort_storage_mode') as StorageMode || 'local';
+    const mode = localStorage.getItem('komfort_storage_mode') as StorageMode || 'supabase';
     this.storageMode.set(mode);
     
     console.log(`Режим хранения: ${mode}`);
@@ -130,7 +155,12 @@ export class ProductService {
 
   // ===== НАЧАЛЬНЫЕ ДАННЫЕ =====
   private getInitialProducts(): Product[] {
-    return [
+
+      const basePath = window.location.hostname.includes('github.io') 
+    ? '/Komfort/'  // для GitHub Pages
+    : '/';         // для локальной разработки
+
+      return [
       {
         id: 1,
         name: 'Диван "Комфорт"',
@@ -138,7 +168,7 @@ export class ProductService {
         price: 29999,
         categoryId: 1,
         categoryName: 'Гостиная',
-        imageUrls: ['assets/products/sofa1.jpg'],
+        imageUrls: [`${basePath}assets/products/sofa1.jpg`],
         stock: 5,
         features: ['Раскладной', 'Ткань - велюр'],
         createdAt: new Date(),
@@ -151,7 +181,7 @@ export class ProductService {
         price: 45999,
         categoryId: 2,
         categoryName: 'Спальня',
-        imageUrls: ['assets/products/bed1.jpg'],
+        imageUrls: [`${basePath}assets/products/bed1.jpg`],
         stock: 3,
         features: ['Ортопедическое основание', 'Ящики для белья'],
         createdAt: new Date(),
@@ -191,14 +221,20 @@ export class ProductService {
   
   // Добавить продукт
   async addProduct(product: Omit<Product, 'id'>): Promise<Product> {
-    console.log('Добавление товара в режиме:', this.storageMode());
-    
-    const newProduct: Product = {
-      ...product,
-      id: this.generateId(),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+  console.log('Добавление товара в режиме:', this.storageMode());
+  
+  // Исправляем пути к изображениям
+  const fixedProduct = {
+    ...product,
+    imageUrls: (product.imageUrls || []).map(url => this.fixImageUrl(url))
+  };
+  
+  const newProduct: Product = {
+    ...fixedProduct,
+    id: this.generateId(),
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
     
     if (this.storageMode() === 'local') {
       // Локальное сохранение

@@ -535,3 +535,83 @@ $text-color: #333;
     max-width: 150px;
   }
 }
+
+// Медиа-запрос для мобильных устройств
+@media (max-width: 768px) {
+  .slide-item {
+    .slide-actions {
+      // Делаем кнопки более компактными
+      gap: 6px;
+      
+      button {
+        padding: 6px 10px !important; // Уменьшаем padding
+        font-size: 11px !important;    // Уменьшаем шрифт
+        min-height: 32px;              // Фиксируем высоту
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        // Уменьшаем иконки/текст внутри кнопок
+        &::before {
+          font-size: 10px !important;
+        }
+        
+        // Специальные стили для конкретных кнопок
+        &:nth-child(1), // Вверх
+        &:nth-child(2) { // Вниз
+          min-width: 50px; // Делаем уже
+        }
+        
+        &:nth-child(3), // Изменить
+        &:nth-child(4) { // Удалить
+          min-width: 70px; // Делаем уже
+        }
+      }
+    }
+  }
+}
+
+// Для очень маленьких экранов
+@media (max-width: 480px) {
+  .slide-item {
+    .slide-actions {
+      // Вертикальное расположение на очень маленьких экранах
+      flex-direction: column;
+      width: 100%;
+      
+      button {
+        width: 100% !important;
+        padding: 8px !important;
+        font-size: 12px !important;
+        justify-content: center;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .about-section-edit {
+    width: 100% !important;
+    max-width: 100% !important;
+    
+    .section-content {
+      width: 100% !important;
+      
+      input.form-control,
+      textarea.form-control {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+    }
+    
+    .section-actions {
+      width: 100% !important;
+      
+      button {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+    }
+  }
+}

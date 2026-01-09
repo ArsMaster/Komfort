@@ -34,7 +34,7 @@ export class ShopsService {
   private async initialize(): Promise<void> {
     if (this.isInitialized) return;
     
-    this.storageMode = localStorage.getItem('komfort_storage_mode') as 'local' | 'supabase' || 'local';
+    this.storageMode = localStorage.getItem('komfort_storage_mode') as 'local' | 'supabase' || 'supabase';
     
     console.log('🔧 Режим работы ShopsService:', this.storageMode);
     

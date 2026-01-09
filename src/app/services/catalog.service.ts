@@ -20,7 +20,7 @@ export class CatalogService {
 
   private async initialize(): Promise<void> {
     // Проверяем сохраненный режим
-    this.storageMode = localStorage.getItem('komfort_storage_mode') as 'local' | 'supabase' || 'local';
+    this.storageMode = localStorage.getItem('komfort_storage_mode') as 'local' | 'supabase' || 'supabase';
     
     console.log('=== CatalogService инициализирован ===');
     console.log('Режим работы:', this.storageMode);

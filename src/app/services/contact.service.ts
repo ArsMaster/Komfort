@@ -35,7 +35,7 @@ export class ContactService {
     if (this.isInitialized) return;
     
     // Проверяем сохраненный режим из localStorage
-    this.storageMode = localStorage.getItem('komfort_storage_mode') as 'local' | 'supabase' || 'local';
+    this.storageMode = localStorage.getItem('komfort_storage_mode') as 'local' | 'supabase' || 'supabase';
     
     console.log('🔧 Режим работы ContactService:', this.storageMode);
     
