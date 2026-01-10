@@ -15,9 +15,8 @@ export class ProductCardComponent {
   @Output() onEdit = new EventEmitter<Product>();
   @Output() onDelete = new EventEmitter<number | string>();
   
-  // Текущий индекс изображения для отображения
   currentImageIndex = 0;
-  showImageGallery = false; // Флаг для показа галереи
+  showImageGallery = false;
 
   // Получаем текущее изображение
   getCurrentImageUrl(): string {
@@ -37,7 +36,7 @@ export class ProductCardComponent {
 
   // Переключение на следующее изображение
   nextImage(event: Event): void {
-    event.stopPropagation(); // Останавливаем всплытие
+    event.stopPropagation();
     if (this.product.imageUrls && this.product.imageUrls.length > 1) {
       this.currentImageIndex = (this.currentImageIndex + 1) % this.product.imageUrls.length;
     }
@@ -45,7 +44,7 @@ export class ProductCardComponent {
 
   // Переключение на предыдущее изображение
   prevImage(event: Event): void {
-    event.stopPropagation(); // Останавливаем всплытие
+    event.stopPropagation();
     if (this.product.imageUrls && this.product.imageUrls.length > 1) {
       this.currentImageIndex = (this.currentImageIndex - 1 + this.product.imageUrls.length) % this.product.imageUrls.length;
     }
@@ -67,27 +66,71 @@ export class ProductCardComponent {
     this.currentImageIndex = index;
   }
 
-  // Безопасный URL для одного изображения
+  // ✅ ИСПРАВЛЕННЫЙ МЕТОД: Безопасный URL для изображения
   private getSafeImageUrl(url: string): string {
-    if (!url) return this.getFallbackImage();
-    
-    if (url.startsWith('/products/')) return url;
-    if (url.startsWith('products/')) return `/${url}`;
-    if (url.includes('assets/')) return url.replace('assets/', '/');
-    if (url.endsWith('.jpg') || url.endsWith('.png') || url.endsWith('.jpeg')) {
-      return `/products/${url}`;
+    if (!url || url.trim() === '') {
+      return this.getFallbackImage();
     }
+    
+    // Если URL уже правильный
+    if (url.startsWith('/assets/')) {
+      return url;
+    }
+    
+    // Если начинается с http:// или https://
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    // Если начинается с assets/ без слеша
+    if (url.startsWith('assets/')) {
+      return '/' + url;
+    }
+    
+    // Если это просто имя файла
+    if (url.endsWith('.jpg') || url.endsWith('.jpeg') || 
+        url.endsWith('.png') || url.endsWith('.gif')) {
+      
+      const filename = url.split('/').pop() || url;
+      
+      // Список файлов в /assets/
+      const filesInAssets = [
+        'sofa1.jpg', 'bed1.jpg', 'IMG_2006.jpg', 'livingroom.jpg',
+        'bedroom.jpg', 'kitchen.jpg', 'default-product.jpg',
+        'slide1.jpeg', 'slide2.jpg', 'slide3.jpeg', 'slide4.jpg',
+        'default-shop.jpg', 'shop1.jpg', 'shop2.jpg'
+      ];
+      
+      if (filesInAssets.includes(filename)) {
+        return `/assets/${filename}`;
+      }
+      
+      // Если не нашли, возвращаем fallback
+      return this.getFallbackImage();
+    }
+    
     return this.getFallbackImage();
+  }
+
+  // ✅ ИСПРАВЛЕННЫЙ МЕТОД: Изображение по умолчанию
+  private getFallbackImage(): string {
+    return '/assets/default-product.jpg';
   }
 
   // Обработчик ошибок загрузки изображения
   handleImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     console.warn('Не удалось загрузить изображение:', img.src);
-    img.src = this.getFallbackImage();
-  }
-
-  private getFallbackImage(): string {
-    return 'assets/products/default.jpg';
+    
+    // Пробуем альтернативные пути
+    const originalSrc = img.src;
+    
+    if (originalSrc.includes('/products/')) {
+      // Пробуем без /products/
+      img.src = originalSrc.replace('/products/', '/');
+    } else if (originalSrc.includes('/assets/')) {
+      // Пробуем заменить на другое изображение
+      img.src = this.getFallbackImage();
+    }
   }
 }

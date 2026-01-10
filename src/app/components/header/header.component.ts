@@ -1,5 +1,5 @@
 // components/header/header.component.ts
-import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core'; // ✅ ДОБАВЛЕНО
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { CatalogService } from '../../services/catalog.service';
@@ -18,6 +18,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private catalogService = inject(CatalogService);
   private authService = inject(AuthService);
+  private cdRef = inject(ChangeDetectorRef); // ✅ ДОБАВЛЕНО
   private subscription?: Subscription;
   
   protected readonly isMenuOpen = signal(false);
@@ -27,12 +28,63 @@ export class HeaderComponent implements OnInit, OnDestroy {
   categories: CatalogCategory[] = [];
 
   ngOnInit(): void {
+    // ✅ Используем setTimeout для отложенной загрузки
+    setTimeout(() => {
+      this.loadCategories();
+    }, 0);
+  }
+
+  private loadCategories(): void {
     // Подписываемся на изменения категорий
     this.subscription = this.catalogService.categories$.subscribe(categories => {
-      this.categories = categories
+      // ✅ Очищаем Base64 изображения и используем обычные пути
+      const cleanCategories = categories
         .filter(cat => cat.isActive)
-        .sort((a, b) => a.order - b.order);
+        .sort((a, b) => a.order - b.order)
+        .map(cat => ({
+          ...cat,
+          // ✅ Преобразуем Base64 обратно в пути к файлам
+          image: this.cleanCategoryImage(cat.image)
+        }));
+      
+      // ✅ Используем setTimeout для избежания ошибки
+      setTimeout(() => {
+        this.categories = cleanCategories;
+        // ✅ Форсируем обнаружение изменений
+        this.cdRef.detectChanges();
+      }, 0);
     });
+  }
+
+  // ✅ ДОБАВЛЕН МЕТОД для очистки изображений категорий
+  private cleanCategoryImage(image: string): string {
+    if (!image) return 'assets/default-category.jpg';
+    
+    // Если это уже правильный путь
+    if (image.startsWith('assets/') || image.startsWith('/assets/')) {
+      return image.startsWith('/') ? image : '/' + image;
+    }
+    
+    // Если это Base64 изображение
+    if (image.startsWith('data:image')) {
+      // Возвращаем обычный путь в зависимости от ID категории
+      const categoryImages: { [key: number]: string } = {
+        1: 'assets/livingroom.jpg',
+        2: 'assets/bedroom.jpg', 
+        3: 'assets/kitchen.jpg',
+        4: 'assets/other.jpg'
+      };
+      
+      // Можно добавить логику для определения ID категории
+      return 'assets/default-category.jpg';
+    }
+    
+    // Если это просто имя файла
+    if (image.endsWith('.jpg') || image.endsWith('.jpeg') || image.endsWith('.png')) {
+      return `/assets/${image.split('/').pop()}`;
+    }
+    
+    return 'assets/default-category.jpg';
   }
 
   ngOnDestroy(): void {

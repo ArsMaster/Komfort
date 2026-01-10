@@ -1,5 +1,5 @@
 // slider.component.ts
-import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject, ChangeDetectorRef } from '@angular/core';
 import { HomePageService } from '../../services/homepage.service';
 
 interface Slide {
@@ -17,6 +17,7 @@ interface Slide {
 })
 export class SliderComponent implements OnInit, OnDestroy {
   private homeService = inject(HomePageService);
+  private cdRef = inject(ChangeDetectorRef); // ✅ ДОБАВЛЕНО
   
   slides = signal<Slide[]>([]);
   currentSlide = signal(0);
@@ -35,7 +36,14 @@ export class SliderComponent implements OnInit, OnDestroy {
 
   loadSlides(): void {
     const slidesFromService = this.homeService.getSlides();
-    this.slides.set(slidesFromService.length > 0 ? slidesFromService : this.getDefaultSlides());
+    const slidesToSet = slidesFromService.length > 0 ? slidesFromService : this.getDefaultSlides();
+    
+    // ✅ Используем setTimeout для асинхронного обновления
+    setTimeout(() => {
+      this.slides.set(slidesToSet);
+      // ✅ Форсируем обнаружение изменений
+      this.cdRef.detectChanges();
+    }, 0);
   }
 
   private getDefaultSlides(): Slide[] {
@@ -49,29 +57,61 @@ export class SliderComponent implements OnInit, OnDestroy {
         image: 'assets/slide2.jpg',
         title: 'Все для вашего дома',
         description: 'Описание второго слайда'
+      },
+      {
+        image: 'assets/slide3.jpeg',
+        title: 'Все для вашего дома',
+        description: 'Описание третьего слайда'
+      },
+      {
+        image: 'assets/slide4.jpg',
+        title: 'Все для вашего дома',
+        description: 'Описание четвертого слайда'
       }
     ];
   }
 
   nextSlide(): void {
     if (this.slides().length === 0) return;
-    this.currentSlide.set((this.currentSlide() + 1) % this.slides().length);
+    
+    const nextIndex = (this.currentSlide() + 1) % this.slides().length;
+    
+    // ✅ Используем setTimeout для избежания ошибки ExpressionChangedAfterItHasBeenCheckedError
+    setTimeout(() => {
+      this.currentSlide.set(nextIndex);
+      // ✅ Форсируем обнаружение изменений
+      this.cdRef.detectChanges();
+    }, 0);
+    
     this.restartAutoPlay();
   }
 
   prevSlide(): void {
     if (this.slides().length === 0) return;
-    this.currentSlide.set(
-      this.currentSlide() === 0 
-        ? this.slides().length - 1 
-        : this.currentSlide() - 1
-    );
+    
+    const prevIndex = this.currentSlide() === 0 
+      ? this.slides().length - 1 
+      : this.currentSlide() - 1;
+    
+    // ✅ Используем setTimeout
+    setTimeout(() => {
+      this.currentSlide.set(prevIndex);
+      // ✅ Форсируем обнаружение изменений
+      this.cdRef.detectChanges();
+    }, 0);
+    
     this.restartAutoPlay();
   }
 
   goToSlide(index: number): void {
     if (index >= 0 && index < this.slides().length) {
-      this.currentSlide.set(index);
+      // ✅ Используем setTimeout
+      setTimeout(() => {
+        this.currentSlide.set(index);
+        // ✅ Форсируем обнаружение изменений
+        this.cdRef.detectChanges();
+      }, 0);
+      
       this.restartAutoPlay();
     }
   }
@@ -95,5 +135,27 @@ export class SliderComponent implements OnInit, OnDestroy {
   private restartAutoPlay(): void {
     this.stopAutoPlay();
     this.startAutoPlay();
+  }
+
+  // ✅ ДОБАВЛЕН МЕТОД для безопасного получения изображения
+  getSafeImageUrl(url: string): string {
+    if (!url) return 'assets/default-slide.jpg';
+    
+    // Если URL уже правильный
+    if (url.startsWith('assets/') || url.startsWith('/assets/')) {
+      return url.startsWith('/') ? url : '/' + url;
+    }
+    
+    // Если это Base64 изображение
+    if (url.startsWith('data:image')) {
+      return url;
+    }
+    
+    // Если это просто имя файла
+    if (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png')) {
+      return `/assets/${url.split('/').pop()}`;
+    }
+    
+    return 'assets/default-slide.jpg';
   }
 }

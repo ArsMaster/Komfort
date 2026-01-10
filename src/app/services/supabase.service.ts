@@ -48,47 +48,76 @@ export class SupabaseService {
   }
 
   // ===== МЕТОДЫ ДЛЯ ПРОДУКТОВ =====
-  async getProducts(): Promise<Product[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+    async getProducts(): Promise<Product[]> {
+  try {
+    const { data, error } = await this.supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      // Преобразуем данные из Supabase в формат вашего Product
-      return data.map(item => ({
+    return data.map(item => {
+      // ✅ ФИКС: Преобразуем строку image_urls в массив
+      let imageUrls: string[] = [];
+      
+      if (item.image_urls) {
+        if (typeof item.image_urls === 'string') {
+          // Пробуем распарсить как JSON
+          try {
+            const parsed = JSON.parse(item.image_urls);
+            if (Array.isArray(parsed)) {
+              imageUrls = parsed;
+            } else {
+              imageUrls = [item.image_urls];
+            }
+          } catch {
+            // Если не JSON, используем как строку
+            imageUrls = [item.image_urls];
+          }
+        } else if (Array.isArray(item.image_urls)) {
+          // Если уже массив
+          imageUrls = item.image_urls;
+        }
+      }
+      
+      // Если после всего массив пустой, добавляем fallback
+      if (imageUrls.length === 0) {
+        imageUrls = ['assets/default-product.jpg'];
+      }
+
+      return {
         id: item.id,
         name: item.name || '',
         description: item.description || '',
-        price: item.price || 0,
-        categoryId: item.category_id || item.categoryId || 0,
-        categoryName: item.category_name || item.categoryName || 'Без категории',
-        imageUrls: this.parseImageUrls(item),
+        price: Number(item.price) || 0,
+        categoryId: Number(item.category_id) || 0,
+        categoryName: item.category_name || 'Без категории',
+        imageUrls: imageUrls, // ✅ Теперь это массив
         stock: item.stock || 0,
-        features: this.parseFeatures(item),
+        features: item.features || [],
         createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at)
-      }));
-    } catch (error) {
-      console.error('❌ Ошибка получения продуктов:', error);
-      return [];
-    }
+        updatedAt: new Date(item.updated_at || item.created_at)
+      };
+    });
+  } catch (error) {
+    console.error('❌ Ошибка получения продуктов:', error);
+    return [];
   }
+}
 
   async addProduct(product: Partial<Product>): Promise<Product | null> {
   try {
-    // Преобразуем Product в формат колонок Supabase
+    // ✅ ФИКС: image_urls должен быть JSON строкой
     const supabaseProduct = {
       name: product.name,
       description: product.description,
       price: product.price,
-      category_id: product.categoryId,    // Используем category_id
-      category_name: product.categoryName, // Используем category_name
-      image_urls: product.imageUrls,
-      stock: product.stock,
-      features: product.features
+      category_id: product.categoryId,
+      category_name: product.categoryName,
+      image_urls: JSON.stringify(product.imageUrls || []), // ✅ Преобразуем в JSON строку
+      stock: product.stock || 0,
+      features: product.features || []
     };
 
     console.log('📤 Отправляем в Supabase:', supabaseProduct);
@@ -99,24 +128,27 @@ export class SupabaseService {
       .select()
       .single();
 
-    if (error) {
-      console.error('❌ Supabase error (addProduct):', error);
-      console.log('Проверьте:');
-      console.log('1. Существуют ли колонки в таблице products');
-      console.log('2. Правильность имен колонок');
-      console.log('3. RLS политики');
-      return null;
+    if (error) throw error;
+
+    // ✅ ФИКС: Парсим image_urls обратно в массив
+    let imageUrls: string[] = [];
+    if (data.image_urls) {
+      try {
+        const parsed = JSON.parse(data.image_urls);
+        imageUrls = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        imageUrls = [data.image_urls];
+      }
     }
 
-    console.log('✅ Товар добавлен в Supabase:', data);
     return {
       id: data.id,
       name: data.name,
       description: data.description,
-      price: data.price,
-      categoryId: data.category_id || product.categoryId, // Маппинг обратно
-      categoryName: data.category_name || product.categoryName,
-      imageUrls: data.image_urls || [],
+      price: Number(data.price),
+      categoryId: Number(data.category_id),
+      categoryName: data.category_name,
+      imageUrls: imageUrls,
       stock: data.stock,
       features: data.features || [],
       createdAt: new Date(data.created_at),

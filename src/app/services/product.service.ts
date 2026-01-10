@@ -23,29 +23,93 @@ export class ProductService {
   private storageKey = 'komfort_products';
 
   private fixImageUrl(url: string): string {
-  // Если уже абсолютный URL
-  if (url.startsWith('http') || url.startsWith('//')) {
-    return url;
+    if (!url || url.trim() === '') {
+      return '/assets/default-product.jpg';
+    }
+    
+    // Если уже абсолютный URL
+    if (url.startsWith('http') || url.startsWith('//')) {
+      return url;
+    }
+    
+    // Исправляем ошибку: в логах видно, что пытается загрузить /assets/products/bedroom.jpg
+    // Но файл bedroom.jpg находится в /assets/, а не в /assets/products/
+    
+    if (url.includes('bedroom.jpg') || url.includes('livingroom.jpg') || 
+        url.includes('kitchen.jpg') || url.includes('sofa1.jpg') ||
+        url.includes('bed1.jpg')) {
+      // Эти файлы в корне assets/
+      return `/assets/${url.split('/').pop()}`;
+    }
+    
+    // Если начинается с /assets/
+    if (url.startsWith('/assets/')) {
+      return url;
+    }
+    
+    // Если начинается с assets/ без слеша
+    if (url.startsWith('assets/')) {
+      return '/' + url;
+    }
+    
+    return '/assets/default-product.jpg';
   }
-  
-  // Определяем базовый путь
-  const basePath = window.location.hostname.includes('github.io') 
-    ? '/Komfort/'
-    : '/';
-  
-  // Если URL уже начинается с /, оставляем как есть
-  if (url.startsWith('/')) {
-    return url;
+
+  // ✅ ДОБАВЛЕН МЕТОД ОЧИСТКИ URL
+  private cleanImageUrls(urls: string[]): string[] {
+    if (!urls || !Array.isArray(urls)) {
+      return ['assets/default-product.jpg'];
+    }
+    
+    return urls.map(url => {
+      if (!url || typeof url !== 'string') {
+        return 'assets/default-product.jpg';
+      }
+      
+      // Удаляем дублирование домена
+      if (url.includes('ваш-сайт.com')) {
+        // Извлекаем последнюю часть
+        const parts = url.split('/');
+        const filename = parts.pop();
+        return `assets/products/${filename}`;
+      }
+      
+      // Удаляем дублирование любого домена
+      if (url.includes('https://') || url.includes('http://')) {
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/');
+        const filename = pathParts.pop();
+        return `assets/products/${filename}`;
+      }
+      
+      // Если URL содержит дублирование (повторяющиеся части)
+      if (url.split('assets/products/').length > 2) {
+        // Берем последнюю часть после последнего "assets/products/"
+        const parts = url.split('assets/products/');
+        const lastPart = parts[parts.length - 1];
+        return `assets/products/${lastPart}`;
+      }
+      
+      // Если это уже правильный относительный путь
+      if (url.startsWith('assets/')) {
+        return url;
+      }
+      
+      // Если это полный URL с доменом
+      if (url.startsWith('http')) {
+        // Извлекаем имя файла
+        const filename = url.split('/').pop();
+        return `assets/products/${filename}`;
+      }
+      
+      // Если это просто имя файла
+      if (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png')) {
+        return `assets/products/${url}`;
+      }
+      
+      return 'assets/default-product.jpg';
+    }).filter(url => url && url.trim() !== '');
   }
-  
-  // Если начинается с assets/, добавляем базовый путь
-  if (url.startsWith('assets/')) {
-    return basePath + url;
-  }
-  
-  // Иначе добавляем полный путь к изображениям товаров
-  return basePath + 'assets/products/' + url;
-}
 
   constructor() {
     // Эффект для автосохранения при изменении продуктов (только для local режима)
@@ -85,6 +149,8 @@ export class ProductService {
         const parsed = JSON.parse(saved);
         const products = parsed.map((product: any) => ({
           ...product,
+          // ✅ Очищаем imageUrls при загрузке из localStorage
+          imageUrls: this.cleanImageUrls(product.imageUrls || []),
           createdAt: product.createdAt ? new Date(product.createdAt) : new Date(),
           updatedAt: product.updatedAt ? new Date(product.updatedAt) : new Date()
         }));
@@ -110,22 +176,32 @@ export class ProductService {
       
       if (products.length > 0) {
         // Конвертируем данные Supabase в формат Product
-        const convertedProducts = products.map(item => ({
-          id: item.id,
-          name: item.name || '',
-          description: item.description || '',
-          price: item.price || 0,
-          categoryId: typeof item.categoryId === 'number' ? item.categoryId : 1,
-          categoryName: item.categoryName || 'Без категории',
-          imageUrls: item.imageUrls || [],
-          stock: item.stock || 0,
-          features: item.features || [],
-          createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
-          updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date()
-        }));
+        const convertedProducts = products.map(item => {
+          // ✅ Очищаем imageUrls при конвертации
+          const cleanImageUrls = this.cleanImageUrls(item.imageUrls || []);
+          
+          return {
+            id: item.id,
+            name: item.name || '',
+            description: item.description || '',
+            price: item.price || 0,
+            categoryId: typeof item.categoryId === 'number' ? item.categoryId : 1,
+            categoryName: item.categoryName || 'Без категории',
+            imageUrls: cleanImageUrls, // ✅ Используем очищенные URL
+            stock: item.stock || 0,
+            features: item.features || [],
+            createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+            updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date()
+          };
+        });
         
         this.products.set(convertedProducts);
         console.log('Товары загружены из Supabase:', convertedProducts.length);
+        
+        // ✅ Выводим отладочную информацию
+        convertedProducts.forEach((product, index) => {
+          console.log(`  ${index + 1}. ${product.name}:`, product.imageUrls);
+        });
         
         // Сохраняем в localStorage как кэш
         this.saveToStorage(convertedProducts);
@@ -155,12 +231,11 @@ export class ProductService {
 
   // ===== НАЧАЛЬНЫЕ ДАННЫЕ =====
   private getInitialProducts(): Product[] {
+    const basePath = window.location.hostname.includes('github.io') 
+      ? '/Komfort/'  // для GitHub Pages
+      : '/';         // для локальной разработки
 
-      const basePath = window.location.hostname.includes('github.io') 
-    ? '/Komfort/'  // для GitHub Pages
-    : '/';         // для локальной разработки
-
-      return [
+    return [
       {
         id: 1,
         name: 'Диван "Комфорт"',
@@ -168,7 +243,7 @@ export class ProductService {
         price: 29999,
         categoryId: 1,
         categoryName: 'Гостиная',
-        imageUrls: [`${basePath}assets/products/sofa1.jpg`],
+        imageUrls: ['assets/sofa1.jpg'], // ✅ Исправлено на относительный путь
         stock: 5,
         features: ['Раскладной', 'Ткань - велюр'],
         createdAt: new Date(),
@@ -181,7 +256,7 @@ export class ProductService {
         price: 45999,
         categoryId: 2,
         categoryName: 'Спальня',
-        imageUrls: [`${basePath}assets/products/bed1.jpg`],
+        imageUrls: ['assets/bed1.jpg'], // ✅ Исправлено на относительный путь
         stock: 3,
         features: ['Ортопедическое основание', 'Ящики для белья'],
         createdAt: new Date(),
@@ -221,20 +296,20 @@ export class ProductService {
   
   // Добавить продукт
   async addProduct(product: Omit<Product, 'id'>): Promise<Product> {
-  console.log('Добавление товара в режиме:', this.storageMode());
-  
-  // Исправляем пути к изображениям
-  const fixedProduct = {
-    ...product,
-    imageUrls: (product.imageUrls || []).map(url => this.fixImageUrl(url))
-  };
-  
-  const newProduct: Product = {
-    ...fixedProduct,
-    id: this.generateId(),
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
+    console.log('Добавление товара в режиме:', this.storageMode());
+    
+    // ✅ Исправляем пути к изображениям с очисткой
+    const fixedProduct = {
+      ...product,
+      imageUrls: this.cleanImageUrls(product.imageUrls || [])
+    };
+    
+    const newProduct: Product = {
+      ...fixedProduct,
+      id: this.generateId(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     
     if (this.storageMode() === 'local') {
       // Локальное сохранение
@@ -282,6 +357,11 @@ export class ProductService {
   // Обновить продукт
   async updateProduct(id: number | string, updatedProduct: Partial<Product>): Promise<void> {
     console.log('Обновление товара ID:', id, 'в режиме:', this.storageMode());
+    
+    // ✅ Очищаем imageUrls если они есть в обновлении
+    if (updatedProduct.imageUrls) {
+      updatedProduct.imageUrls = this.cleanImageUrls(updatedProduct.imageUrls);
+    }
     
     // Сначала обновляем локально для быстрого отклика
     this.products.update(products =>
@@ -421,7 +501,25 @@ export class ProductService {
   }
 
   switchToSupabase(): void {
-  console.warn('Метод switchToSupabase устарел, используйте switchStorageMode');
-  this.switchStorageMode('supabase');
-}
+    console.warn('Метод switchToSupabase устарел, используйте switchStorageMode');
+    this.switchStorageMode('supabase');
+  }
+
+  // ✅ НОВЫЙ МЕТОД: Принудительная очистка всех URL
+  async fixAllImageUrls(): Promise<void> {
+    console.log('🧹 Очистка всех imageUrls...');
+    
+    const fixedProducts = this.products().map(product => ({
+      ...product,
+      imageUrls: this.cleanImageUrls(product.imageUrls || [])
+    }));
+    
+    this.products.set(fixedProducts);
+    console.log('✅ Все imageUrls очищены');
+    
+    // Если в режиме Supabase, синхронизируем обратно
+    if (this.storageMode() === 'supabase') {
+      await this.syncToSupabase();
+    }
+  }
 }

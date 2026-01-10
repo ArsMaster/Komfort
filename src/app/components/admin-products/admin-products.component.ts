@@ -129,7 +129,7 @@ export class AdminProductsComponent implements OnInit {
   }
 
   updateImageUrlsFromFiles(): void {
-    const urls = this.selectedFiles.map(file => `/assets/products/${file.name}`); // Исправьте путь
+    const urls = this.selectedFiles.map(file => `/assets/products/${file.name}`);
     this.imageUrlsText = urls.join('\n');
     this.currentProduct.imageUrls = urls;
   }
@@ -138,7 +138,7 @@ export class AdminProductsComponent implements OnInit {
     this.selectedFiles = [];
     this.imagePreviews = [];
     this.imageUrlsText = '';
-    this.currentProduct.imageUrls = ['assets/products/default.jpg']; // Исправьте путь
+    this.currentProduct.imageUrls = ['/assets/sofa1.jpg'];
     if (this.multipleFileInput) {
       this.multipleFileInput.nativeElement.value = '';
     }

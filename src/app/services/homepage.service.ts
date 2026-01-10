@@ -416,6 +416,7 @@ export class HomePageService {
     console.error('❌ Ошибка инициализации данных:', error);
   }
 }
+    
 
   // Синхронизация локальных данных с Supabase
   async syncToSupabase(): Promise<void> {
@@ -431,4 +432,5 @@ export class HomePageService {
     console.log('2. updateSlides()');
     console.log('3. updateContactInfo()');
   }
+
 }

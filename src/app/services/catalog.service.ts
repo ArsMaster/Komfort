@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CatalogCategory } from '../models/catalog.model';
 import { SupabaseService } from './supabase.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
@@ -117,14 +118,35 @@ export class CatalogService {
 
   // ===== СОХРАНЕНИЕ =====
   private saveToLocalStorage(categories?: CatalogCategory[]): void {
+  try {
     const catsToSave = categories || this.getCategories();
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(catsToSave));
-      console.log('Категории сохранены в localStorage (кэш)');
-    } catch (error) {
+    
+    // Очищаем Base64 изображения перед сохранением
+    const cleanedCategories = catsToSave.map(cat => ({
+      ...cat,
+      image: cat.image && cat.image.startsWith('data:image') 
+        ? '' // Очищаем Base64
+        : cat.image
+    }));
+    
+    localStorage.setItem(this.storageKey, JSON.stringify(cleanedCategories));
+    console.log('Категории сохранены в localStorage (кэш):', cleanedCategories.length);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'QuotaExceededError') {
+      console.warn('⚠️ LocalStorage переполнен, очищаем кэш');
+      this.clearCache();
+    } else {
       console.error('Ошибка сохранения в localStorage:', error);
     }
   }
+}
+
+private clearCache(): void {
+  // Удаляем только самые большие данные
+  localStorage.removeItem('komfort_categories');
+  localStorage.removeItem('komfort_products');
+  console.log('🗑️ Очищен кэш категорий и товаров');
+}
 
   // ===== ПУБЛИЧНЫЕ МЕТОДЫ (остаются почти без изменений) =====
   getCategories(): CatalogCategory[] {
