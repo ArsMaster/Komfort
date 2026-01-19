@@ -12,14 +12,14 @@ import { ContactInfo } from '../models/contact.model';
 })
 export class SupabaseService {
 
-  private supabase: SupabaseClient;
+  public supabaseClient: SupabaseClient;
 
   constructor() {
     // Временное решение - потом замените на environment
     const supabaseUrl = 'https://czsfywxvxmxotmalasla.supabase.co';
     const supabaseKey = 'sb_publishable_fruepZeSusdLrlJE_xMZuw_wqbej0Fk';
     
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+     this.supabaseClient = createClient(supabaseUrl, supabaseKey);
     
     // Тестируем подключение при инициализации
     this.testConnection();
@@ -28,7 +28,7 @@ export class SupabaseService {
   // Метод для проверки подключения
   async testConnection(): Promise<void> {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await this.supabaseClient
         .from('products')
         .select('count')
         .limit(1);
@@ -50,20 +50,33 @@ export class SupabaseService {
   // ===== МЕТОДЫ ДЛЯ ПРОДУКТОВ =====
     async getProducts(): Promise<Product[]> {
   try {
-    const { data, error } = await this.supabase
+    // ✅ ИСПРАВЛЕНИЕ: Используем JOIN или получаем категории отдельно
+    const { data: productsData, error } = await this.supabaseClient
       .from('products')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    return data.map(item => {
+    // Получаем категории для маппинга
+    const { data: categoriesData } = await this.supabaseClient
+      .from('categories')
+      .select('id, title');
+
+    // Создаем карту категорий для быстрого доступа
+    const categoryMap = new Map<number, string>();
+    if (categoriesData) {
+      categoriesData.forEach(cat => {
+        categoryMap.set(cat.id, cat.title);
+      });
+    }
+
+    return productsData.map(item => {
       // ✅ ФИКС: Преобразуем строку image_urls в массив
       let imageUrls: string[] = [];
       
       if (item.image_urls) {
         if (typeof item.image_urls === 'string') {
-          // Пробуем распарсить как JSON
           try {
             const parsed = JSON.parse(item.image_urls);
             if (Array.isArray(parsed)) {
@@ -72,28 +85,39 @@ export class SupabaseService {
               imageUrls = [item.image_urls];
             }
           } catch {
-            // Если не JSON, используем как строку
             imageUrls = [item.image_urls];
           }
         } else if (Array.isArray(item.image_urls)) {
-          // Если уже массив
           imageUrls = item.image_urls;
         }
       }
       
-      // Если после всего массив пустой, добавляем fallback
       if (imageUrls.length === 0) {
-        imageUrls = ['assets/default-product.jpg'];
+        imageUrls = ['/assets/default-product.jpg']; // ✅ Добавьте / в начале
       }
+
+      const categoryId = Number(item.category_id) || 0;
+      
+      // ✅ ВАЖНОЕ ИСПРАВЛЕНИЕ: Берем category_name из базы, если NULL - берем из карты категорий
+      const categoryName = item.category_name || 
+                          categoryMap.get(categoryId) || 
+                          'Без категории';
+
+      console.log(`📦 Товар "${item.name}":`, {
+        categoryId: categoryId,
+        categoryNameFromDB: item.category_name,
+        categoryNameFromMap: categoryMap.get(categoryId),
+        finalCategoryName: categoryName
+      });
 
       return {
         id: item.id,
         name: item.name || '',
         description: item.description || '',
         price: Number(item.price) || 0,
-        categoryId: Number(item.category_id) || 0,
-        categoryName: item.category_name || 'Без категории',
-        imageUrls: imageUrls, // ✅ Теперь это массив
+        categoryId: categoryId,
+        categoryName: categoryName, // ✅ Теперь всегда правильное название
+        imageUrls: imageUrls,
         stock: item.stock || 0,
         features: item.features || [],
         createdAt: new Date(item.created_at),
@@ -106,23 +130,36 @@ export class SupabaseService {
   }
 }
 
-  async addProduct(product: Partial<Product>): Promise<Product | null> {
+async addProduct(product: Partial<Product>): Promise<Product | null> {
   try {
-    // ✅ ФИКС: image_urls должен быть JSON строкой
+    // Получаем название категории если не передано
+    let categoryName = product.categoryName;
+    if (!categoryName && product.categoryId) {
+      // Получаем категорию из базы
+      const { data: categoryData } = await this.supabaseClient
+        .from('categories')
+        .select('title')
+        .eq('id', product.categoryId)
+        .single();
+      
+      categoryName = categoryData?.title || 'Без категории';
+    }
+
     const supabaseProduct = {
       name: product.name,
       description: product.description,
       price: product.price,
       category_id: product.categoryId,
-      category_name: product.categoryName,
-      image_urls: JSON.stringify(product.imageUrls || []), // ✅ Преобразуем в JSON строку
+      // ✅ ВАЖНО: Всегда передаем category_name
+      category_name: categoryName || 'Без категории',
+      image_urls: JSON.stringify(product.imageUrls || []),
       stock: product.stock || 0,
       features: product.features || []
     };
 
     console.log('📤 Отправляем в Supabase:', supabaseProduct);
 
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('products')
       .insert([supabaseProduct])
       .select()
@@ -161,37 +198,92 @@ export class SupabaseService {
 }
 
   async updateProduct(id: string, product: Partial<Product>): Promise<boolean> {
-    try {
-      const updateData: any = {};
+  try {
+    const updateData: any = {};
+    
+    // Маппинг полей
+    if (product.name !== undefined) updateData.name = product.name;
+    if (product.description !== undefined) updateData.description = product.description;
+    if (product.price !== undefined) updateData.price = product.price;
+    
+    // ✅ ВАЖНОЕ ИСПРАВЛЕНИЕ: Если меняем categoryId, нужно обновить и category_name
+    if (product.categoryId !== undefined) {
+      updateData.category_id = product.categoryId;
       
-      // Маппинг полей
-      if (product.name !== undefined) updateData.name = product.name;
-      if (product.description !== undefined) updateData.description = product.description;
-      if (product.price !== undefined) updateData.price = product.price;
-      if (product.categoryId !== undefined) updateData.category_id = product.categoryId;
-      if (product.categoryName !== undefined) updateData.category_name = product.categoryName;
-      if (product.imageUrls !== undefined) updateData.image_urls = product.imageUrls;
-      if (product.stock !== undefined) updateData.stock = product.stock;
-      if (product.features !== undefined) updateData.features = product.features;
-      
-      updateData.updated_at = new Date().toISOString();
-
-      const { error } = await this.supabase
-        .from('products')
-        .update(updateData)
-        .eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      console.error('❌ Ошибка обновления продукта:', error);
-      return false;
+      // Если не передали categoryName, получаем его из базы
+      if (!product.categoryName) {
+        const { data: categoryData } = await this.supabaseClient
+          .from('categories')
+          .select('title')
+          .eq('id', product.categoryId)
+          .single();
+        
+        updateData.category_name = categoryData?.title || 'Без категории';
+      }
     }
+    
+    if (product.categoryName !== undefined) updateData.category_name = product.categoryName;
+    if (product.imageUrls !== undefined) updateData.image_urls = JSON.stringify(product.imageUrls);
+    if (product.stock !== undefined) updateData.stock = product.stock;
+    if (product.features !== undefined) updateData.features = product.features;
+    
+    updateData.updated_at = new Date().toISOString();
+
+    console.log('📤 Обновляем товар в Supabase:', { id, updateData });
+
+    const { error } = await this.supabaseClient
+      .from('products')
+      .update(updateData)
+      .eq('id', id);
+
+    if (error) throw error;
+    
+    console.log('✅ Товар обновлен в Supabase');
+    return true;
+  } catch (error) {
+    console.error('❌ Ошибка обновления продукта:', error);
+    return false;
   }
+}
+
+/**
+ * Вспомогательный метод для получения названия категории по ID
+ */
+private async getCategoryNameById(categoryId: number): Promise<string> {
+  try {
+    if (!categoryId) return 'Без категории';
+    
+    const { data, error } = await this.supabaseClient
+      .from('categories')
+      .select('title')
+      .eq('id', categoryId)
+      .single();
+    
+    if (error || !data) {
+      console.warn(`⚠️ Категория с ID=${categoryId} не найдена`);
+      
+      // Fallback на локальную карту
+      const categoryMap: { [key: number]: string } = {
+        1: 'Гостиная',
+        2: 'Спальня',
+        3: 'Кухня',
+        4: 'Матрассы',
+        5: 'Люстры'
+      };
+      
+      return categoryMap[categoryId] || 'Без категории';
+    }
+    
+    return data.title;
+  } catch (error) {
+    console.error('❌ Ошибка получения названия категории:', error);
+    return 'Без категории';
+  }
+}
 
   async deleteProduct(id: string): Promise<boolean> {
     try {
-      const { error } = await this.supabase
+      const { error } = await this.supabaseClient
         .from('products')
         .delete()
         .eq('id', id);
@@ -221,7 +313,7 @@ export class SupabaseService {
   // ===== МЕТОДЫ ДЛЯ КАТЕГОРИЙ =====
    async getCategories(): Promise<CatalogCategory[]> {
   try {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('categories')
       .select('*')
       .order('order', { ascending: true });
@@ -260,7 +352,7 @@ export class SupabaseService {
       is_active: category.isActive !== false
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('categories')
       .insert([supabaseData])
       .select()
@@ -297,7 +389,7 @@ export class SupabaseService {
 
     console.log('📤 Обновляем категорию в Supabase:', { id, supabaseData });
 
-    const { error } = await this.supabase
+    const { error } = await this.supabaseClient
       .from('categories')
       .update(supabaseData)
       .eq('id', id);
@@ -319,7 +411,7 @@ async deleteCategory(id: number): Promise<boolean> {
   try {
     console.log('🗑️ Удаляем категорию из Supabase, ID:', id);
 
-    const { error } = await this.supabase
+    const { error } = await this.supabaseClient
       .from('categories')
       .delete()
       .eq('id', id);
@@ -340,7 +432,7 @@ async deleteCategory(id: number): Promise<boolean> {
   // ===== МЕТОДЫ ДЛЯ МАГАЗИНОВ =====
   async getShops(): Promise<Shop[]> {
   try {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('shops')
       .select('*')
       .order('created_at', { ascending: false });
@@ -384,7 +476,7 @@ async addShop(shop: Partial<Shop>): Promise<Shop | null> {
 
     console.log('📤 Добавляем магазин в Supabase:', supabaseData);
 
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('shops')
       .insert([supabaseData])
       .select()
@@ -428,7 +520,7 @@ async updateShop(id: string, updates: Partial<Shop>): Promise<boolean> {
 
     console.log('📤 Обновляем магазин в Supabase:', { id, supabaseData });
 
-    const { error } = await this.supabase
+    const { error } = await this.supabaseClient
       .from('shops')
       .update(supabaseData)
       .eq('id', id);
@@ -450,7 +542,7 @@ async deleteShop(id: string): Promise<boolean> {
   try {
     console.log('🗑️ Удаляем магазин из Supabase, ID:', id);
 
-    const { error } = await this.supabase
+    const { error } = await this.supabaseClient
       .from('shops')
       .delete()
       .eq('id', id);
@@ -469,43 +561,107 @@ async deleteShop(id: string): Promise<boolean> {
 }
 
   // ===== КОНТАКТЫ (contact_info) =====
-  async getContactInfo(): Promise<ContactInfo | null> {
+  async getContactInfo(): Promise<any> {
   try {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('contact_info')
       .select('*')
-      .limit(1);
+      .limit(1)
+      .single();
 
-    if (error) {
-      console.error('Supabase error (getContactInfo):', error);
-      return null;
-    }
+    if (error) throw error;
+    
+    if (!data) return null;
 
-    // Если таблица пуста, возвращаем null
-    if (!data || data.length === 0) {
-      console.log('📭 Таблица contact_info пуста');
-      return null;
-    }
+    // ВАЖНО: about_sections уже должен быть массивом (jsonb автоматически парсится)
+    console.log('🔍 Supabase raw data:', {
+      id: data.id,
+      hasAboutSections: !!data.about_sections,
+      aboutSectionsType: typeof data.about_sections,
+      aboutSectionsValue: data.about_sections
+    });
 
     return {
-      id: data[0].id,
-      phone: data[0].phone || '',
-      email: data[0].email || '',
-      office: data[0].office || '',
-      workingHours: data[0].working_hours || '',
-      mapEmbed: data[0].map_embed || '',
-      social: data[0].social || []
+      id: data.id,
+      phone: data.phone || '',
+      email: data.email || '',
+      office: data.office || '',
+      workingHours: data.working_hours || '',
+      mapEmbed: data.map_embed || '',
+      social: data.social || [],
+      about_sections: data.about_sections || [] // jsonb автоматически парсится
     };
   } catch (error) {
-    console.error('❌ Ошибка получения информации о компании:', error);
+    console.error('❌ Ошибка получения контактов:', error);
     return null;
+  }
+}
+
+  async updateSlides(slides: any[]): Promise<boolean> {
+  try {
+    console.log('🔄 Обновление слайдов в Supabase...');
+    console.log('Количество слайдов для обновления:', slides.length);
+    
+    // 1. Удаляем все старые слайды
+    console.log('🗑️ Удаление старых слайдов...');
+    const { error: deleteError } = await this.supabaseClient
+      .from('slides')
+      .delete()
+      .neq('id', 0); // Удаляем все записи
+    
+    if (deleteError) {
+      console.error('❌ Ошибка удаления старых слайдов:', deleteError);
+      return false;
+    }
+    
+    console.log('✅ Старые слайды удалены');
+    
+    // 2. Если нет новых слайдов, просто возвращаем успех
+    if (slides.length === 0) {
+      console.log('ℹ️ Нет слайдов для добавления');
+      return true;
+    }
+    
+    // 3. Подготавливаем данные для вставки
+    const slidesToInsert = slides.map((slide, index) => {
+      // Определяем imageUrl - используем image или imageUrl
+      const imageUrl = slide.image || slide.imageUrl || '';
+      
+      return {
+        image: imageUrl,
+        title: slide.title || '',
+        description: slide.description || '',
+        order: index + 1,
+        is_active: slide.isActive !== undefined ? slide.isActive : true,
+        link: slide.link || '',
+      };
+    });
+    
+    console.log('📤 Данные для вставки:', slidesToInsert);
+    
+    // 4. Добавляем новые слайды
+    const { error: insertError } = await this.supabaseClient
+      .from('slides')
+      .insert(slidesToInsert);
+    
+    if (insertError) {
+      console.error('❌ Ошибка добавления новых слайдов:', insertError);
+      return false;
+    }
+    
+    console.log(`✅ Добавлено ${slides.length} слайдов в Supabase`);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Ошибка обновления слайдов:', error);
+    return false;
   }
 }
 
   // ===== СЛАЙДЫ (slides) =====
   async getSlides(): Promise<Slide[]> {
   try {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('slides')
       .select('*')
       .order('order', { ascending: true });
@@ -539,7 +695,7 @@ async deleteShop(id: string): Promise<boolean> {
   // ===== НАСТРОЙКИ ГЛАВНОЙ (homepage_settings) =====
   async getHomepageSettings(): Promise<HomePageSettings | null> {
   try {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('homepage_settings')
       .select('*')
       .limit(1);
@@ -577,7 +733,7 @@ async deleteShop(id: string): Promise<boolean> {
       updated_at: new Date().toISOString()
     };
 
-    const { error } = await this.supabase
+    const { error } = await this.supabaseClient
       .from('homepage_settings')
       .update(updateData)
       .eq('id', 1); // Предполагаем, что есть только одна запись
@@ -596,45 +752,274 @@ async deleteShop(id: string): Promise<boolean> {
 }
 
 // Обновление информации о компании
-async updateContactInfo(contactInfo: Partial<ContactInfo>): Promise<boolean> {
+async updateContactInfo(contactInfo: any): Promise<boolean> {
   try {
-    console.log('📤 Обновляем контакты в Supabase:', contactInfo);
-    
-    const updateData: any = {};
-    
-    // Маппинг полей из Angular модели в SQL колонки
-    if (contactInfo.phone !== undefined) updateData.phone = contactInfo.phone;
-    if (contactInfo.email !== undefined) updateData.email = contactInfo.email;
-    if (contactInfo.office !== undefined) updateData.office = contactInfo.office;
-    if (contactInfo.workingHours !== undefined) updateData.working_hours = contactInfo.workingHours;
-    if (contactInfo.mapEmbed !== undefined) updateData.map_embed = contactInfo.mapEmbed;
-    if (contactInfo.social !== undefined) updateData.social = contactInfo.social;
-    
-    updateData.updated_at = new Date().toISOString();
+    console.log('🔄 Обновление информации о компании в Supabase...');
+    console.log('Данные для обновления:', contactInfo);
 
-    console.log('📝 Данные для обновления:', updateData);
-
-    const { error } = await this.supabase
-      .from('contact_info')
-      .update(updateData)
-      .eq('id', contactInfo.id || 1); // ID 1 по умолчанию
-
-    if (error) {
-      console.error('❌ Ошибка обновления контактов:', error);
-      console.log('Проверьте:');
-      console.log('1. Существует ли таблица contact_info');
-      console.log('2. Правильность имен колонок');
-      console.log('3. RLS политики');
-      return false;
+    // 1. ПЕРВОЕ: Получаем текущие данные из базы, чтобы сохранить существующие social
+    let existingSocial: any[] = [];
+    try {
+      const { data: currentData, error: fetchError } = await this.supabaseClient
+        .from('contact_info')
+        .select('social')
+        .eq('id', 1)
+        .single();
+      
+      if (!fetchError && currentData && currentData.social) {
+        existingSocial = currentData.social;
+        console.log('📋 Найдены существующие social сети:', existingSocial.length);
+      } else if (fetchError && !fetchError.message.includes('No rows found')) {
+        console.warn('⚠️ Не удалось получить текущие social:', fetchError.message);
+      }
+    } catch (fetchError) {
+      console.warn('⚠️ Ошибка при получении текущих данных:', fetchError);
     }
 
-    console.log('✅ Контакты обновлены в Supabase');
+    // 2. Определяем какие social сохранять:
+    // - Если явно переданы новые social - используем их
+    // - Если не переданы - сохраняем существующие
+    // - Если нет ни тех ни других - пустой массив
+    let socialToSave: any[];
+    
+    if (contactInfo.social !== undefined) {
+      // Явно переданы social - используем их (даже если пустой массив)
+      socialToSave = Array.isArray(contactInfo.social) ? contactInfo.social : [];
+      console.log('✅ Используем переданные social сети:', socialToSave.length);
+    } else {
+      // Social не переданы - сохраняем существующие
+      socialToSave = existingSocial;
+      console.log('💾 Сохраняем существующие social сети:', socialToSave.length);
+    }
+
+    // 3. Подготавливаем данные для обновления
+    const updateData: any = {
+      phone: contactInfo.phone || '',
+      email: contactInfo.email || '',
+      office: contactInfo.office || contactInfo.address || '',
+      working_hours: contactInfo.workingHours || contactInfo.workHours || '',
+      social: socialToSave // ← КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: всегда сохраняем social
+    };
+    
+    // Дополнительные поля
+    if (contactInfo.aboutSections !== undefined) {
+      updateData.about_sections = contactInfo.aboutSections;
+    }
+    
+    if (contactInfo.mapEmbed !== undefined) {
+      updateData.map_embed = contactInfo.mapEmbed;
+    }
+    
+    console.log('📝 Преобразованные данные:', updateData);
+    console.log('📱 Social данные для сохранения:', {
+      hasSocial: socialToSave.length > 0,
+      socialLength: socialToSave.length,
+      social: socialToSave,
+      source: contactInfo.social !== undefined ? 'переданы из формы' : 'взяты из базы'
+    });
+    
+    // 4. Пробуем обновить с social
+    const { data, error } = await this.supabaseClient
+      .from('contact_info')
+      .upsert({
+        id: 1,
+        ...updateData
+      })
+      .select();
+    
+    if (error) {
+      console.error('❌ Ошибка обновления информации о компании:', error);
+      
+      // Если ошибка связана с полем social (колонка не существует)
+      if (error.message.includes('social') || error.message.includes('column')) {
+        console.log('⚠️ Проблема с колонкой social, пробуем без нее...');
+        delete updateData.social;
+        
+        const { error: secondTry } = await this.supabaseClient
+          .from('contact_info')
+          .upsert({
+            id: 1,
+            ...updateData
+          });
+        
+        if (secondTry) {
+          console.error('❌ Вторая попытка тоже не удалась:', secondTry);
+          return false;
+        }
+        
+        console.log('✅ Информация о компании обновлена (без social)');
+        return true;
+      }
+      
+      return false;
+    }
+    
+    console.log('✅ Информация о компании обновлена в Supabase');
+    console.log('📊 Ответ от Supabase:', data);
+    
+    if (data && data[0]?.social) {
+      console.log('📱 Social успешно сохранены:', data[0].social);
+    } else if (data && data[0]) {
+      console.log('📭 Social не сохранены в ответе');
+    }
+    
     return true;
+    
   } catch (error) {
-    console.error('❌ Ошибка обновления контактов:', error);
+    console.error('❌ Ошибка обновления информации о компании:', error);
     return false;
   }
 }
+async initializeHomepageData(): Promise<boolean> {
+  try {
+    console.log('🔧 Инициализация данных главной страницы в Supabase...');
+    
+    let allSuccess = true;
+    
+    // 1. Проверяем и создаем настройки
+    const settings = await this.getHomepageSettings();
+    if (!settings) {
+      console.log('➕ Создаем начальные настройки...');
+      const defaultSettings = {
+        title: 'Komfort - Мебель и товары для дома',
+        description: 'Лучшие товары для вашего дома по доступным ценам',
+        bannerImages: [],
+        featuredCategories: []
+      };
+      
+      const created = await this.createHomepageSettings(defaultSettings);
+      allSuccess = allSuccess && !!created;
+      console.log(created ? '✅ Настройки созданы' : '❌ Ошибка создания настроек');
+    }
+    
+    // 2. Проверяем и создаем слайды
+    const slides = await this.getSlides();
+    if (!slides || slides.length === 0) {
+      console.log('➕ Создаем начальные слайды...');
+      const defaultSlides = [
+        {
+          image: '/assets/slide1.jpeg',
+          title: 'Все для вашего дома',
+          description: 'Широкий ассортимент мебели и товаров для дома'
+        },
+        {
+          image: '/assets/slide2.jpg',
+          title: 'Качество и надежность',
+          description: 'Только проверенные производители и материалы'
+        },
+        {
+          image: '/assets/slide3.jpeg',
+          title: 'Доступные цены',
+          description: 'Лучшее соотношение цены и качества на рынке'
+        },
+        {
+          image: '/assets/slide4.jpg',
+          title: 'Быстрая доставка',
+          description: 'Доставка по всей России в кратчайшие сроки'
+        }
+      ];
+      
+      const slidesSuccess = await this.createSlides(defaultSlides);
+      allSuccess = allSuccess && slidesSuccess;
+      console.log(slidesSuccess ? '✅ Слайды созданы' : '❌ Ошибка создания слайдов');
+    }
+    
+    // 3. Проверяем и создаем контакты
+    const contacts = await this.getContactInfo();
+    if (!contacts) {
+      console.log('➕ Создаем начальную информацию о компании...');
+      const defaultContactInfo = {
+        phone: '+7 (800) 123-45-67',
+        email: 'info@komfort.ru',
+        address: 'Чеченская Республика, г. Шелковская, ул. Косая, 47',
+        workHours: 'ПН - ВС с 8:00 до 20:00',
+        aboutSections: [
+          {
+            title: 'Опыт',
+            content: 'Продукция Komfort уже более 13 лет пользуется успехом у покупателей...'
+          },
+          {
+            title: 'Современный модельный ряд',
+            content: 'Komfort следит за тенденциями на рынке товаров для дома...'
+          },
+          {
+            title: 'Производство',
+            content: 'Производственный комплекс занимает 15 000 кв. м...'
+          }
+        ]
+      };
+      
+      const contactData = {
+        phone: defaultContactInfo.phone,
+        email: defaultContactInfo.email,
+        office: defaultContactInfo.address,
+        working_hours: defaultContactInfo.workHours,
+        about_sections: JSON.stringify(defaultContactInfo.aboutSections)
+      };
+      
+      const { error } = await this.supabaseClient
+        .from('contact_info')
+        .insert([contactData]);
+      
+      const contactsSuccess = !error;
+      allSuccess = allSuccess && contactsSuccess;
+      console.log(contactsSuccess ? '✅ Контакты созданы' : '❌ Ошибка создания контактов');
+    }
+    
+    console.log(allSuccess ? '🎉 Все данные инициализированы' : '⚠️ Были ошибки при инициализации');
+    return allSuccess;
+    
+  } catch (error) {
+    console.error('❌ Ошибка инициализации данных:', error);
+    return false;
+  }
+}
+
+async syncHomepageData(data: {
+  settings: HomePageSettings,
+  slides: any[],
+  companyInfo: any
+}): Promise<{ success: boolean, details: any }> {
+  try {
+    console.log('🔄 Запуск полной синхронизации главной страницы...');
+    
+    const results = {
+      settings: false,
+      slides: false,
+      companyInfo: false
+    };
+    
+    // 1. Синхронизация настроек
+    console.log('1. Синхронизация настроек...');
+    results.settings = await this.updateHomepageSettings(data.settings);
+    
+    // 2. Синхронизация слайдов
+    console.log('2. Синхронизация слайдов...');
+    results.slides = await this.updateSlides(data.slides);
+    
+    // 3. Синхронизация информации о компании
+    console.log('3. Синхронизация информации о компании...');
+    results.companyInfo = await this.updateContactInfo(data.companyInfo);
+    
+    const success = results.settings && results.slides && results.companyInfo;
+    
+    console.log('📊 Результаты синхронизации:', results);
+    console.log(success ? '🎉 Синхронизация завершена успешно' : '⚠️ Были ошибки при синхронизации');
+    
+    return {
+      success,
+      details: results
+    };
+    
+  } catch (error: any) { // ✅ Исправляем тип unknown
+    console.error('❌ Ошибка синхронизации:', error);
+    return {
+      success: false,
+      details: { error: error.message || String(error) } // ✅ Безопасное получение сообщения
+    };
+  }
+}
+
 
 // Методы для работы со слайдами
 async addSlide(slide: Slide): Promise<Slide | null> {
@@ -647,7 +1032,7 @@ async addSlide(slide: Slide): Promise<Slide | null> {
       is_active: true
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('slides')
       .insert([supabaseData])
       .select()
@@ -680,7 +1065,7 @@ async updateSlide(id: number, updates: Partial<Slide>): Promise<boolean> {
     
     updateData.updated_at = new Date().toISOString();
 
-    const { error } = await this.supabase
+    const { error } = await this.supabaseClient
       .from('slides')
       .update(updateData)
       .eq('id', id);
@@ -700,7 +1085,7 @@ async updateSlide(id: number, updates: Partial<Slide>): Promise<boolean> {
 
 async deleteSlide(id: number): Promise<boolean> {
   try {
-    const { error } = await this.supabase
+    const { error } = await this.supabaseClient
       .from('slides')
       .delete()
       .eq('id', id);
@@ -728,7 +1113,7 @@ async createHomepageSettings(settings: HomePageSettings): Promise<HomePageSettin
       featured_categories: settings.featuredCategories || []
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('homepage_settings')
       .insert([supabaseData])
       .select()
@@ -763,7 +1148,7 @@ async createContactInfo(contactInfo: any): Promise<ContactInfo | null> {
       social: []
     };
 
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('contact_info')
       .insert([supabaseData])
       .select()
@@ -801,7 +1186,7 @@ async createSlides(slides: Slide[]): Promise<boolean> {
       is_active: true
     }));
 
-    const { error } = await this.supabase
+    const { error } = await this.supabaseClient
       .from('slides')
       .insert(supabaseData);
 
@@ -820,7 +1205,7 @@ async createSlides(slides: Slide[]): Promise<boolean> {
 
   // ===== ЗАЯВКИ (contact_submissions) =====
   async submitContactForm(submission: any): Promise<boolean> {
-    const { error } = await this.supabase
+    const { error } = await this.supabaseClient
       .from('contact_submissions')
       .insert([{
         name: submission.name,
@@ -840,7 +1225,7 @@ async createSlides(slides: Slide[]): Promise<boolean> {
 
     for (const table of tables) {
       try {
-        const { error } = await this.supabase
+        const { error } = await this.supabaseClient
           .from(table)
           .select('count')
           .limit(1);
@@ -859,7 +1244,7 @@ async createSlides(slides: Slide[]): Promise<boolean> {
   // Проверить, существует ли таблица
   async tableExists(tableName: string): Promise<boolean> {
     try {
-      const { error } = await this.supabase
+      const { error } = await this.supabaseClient
         .from(tableName)
         .select('*')
         .limit(1);
@@ -880,5 +1265,13 @@ async createSlides(slides: Slide[]): Promise<boolean> {
       const exists = await this.tableExists(table);
       console.log(`${table}: ${exists ? '✅ существует' : '❌ не найдена'}`);
     }
+  }
+  // ===== ПУБЛИЧНЫЙ ДОСТУП К КЛИЕНТУ =====
+  
+  /**
+   * Получает клиент Supabase для использования в других сервисах
+   */
+  getClient(): SupabaseClient {
+    return this.supabaseClient;
   }
 }

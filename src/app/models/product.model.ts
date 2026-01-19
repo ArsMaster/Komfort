@@ -6,7 +6,7 @@ export interface Product {
   description: string;
   price: number;
   categoryId: number; // ID категории для связи
-  categoryName?: string; // Название для отображения
+  categoryName: string; // Название для отображения
   imageUrls: string[];
   stock: number;
   features: string[];

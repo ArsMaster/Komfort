@@ -57,7 +57,7 @@ export class TestSupabaseComponent {
   }
 
   switchToSupabase() {
-    this.productService.switchToSupabase();
+    this.productService.syncToSupabase();
     this.message = 'Переключились на Supabase (режим тестирования)';
   }
 }

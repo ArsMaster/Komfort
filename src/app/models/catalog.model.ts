@@ -7,4 +7,6 @@ export interface CatalogCategory {
   order: number;
   isActive: boolean;
   createdAt: Date;
+  lowQualityImage?: string;
+  imageLoaded?: boolean;
 }

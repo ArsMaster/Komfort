@@ -1,20 +1,41 @@
+<!-- about.component.html -->
 <div class="about-komfort">
   <!-- Секция "О компании" -->
   <section class="about-section">
     <div class="container">
       <h1 class="section-title">О КОМПАНИИ</h1>
       
-      <div class="about-content">
-        @for (section of aboutSections; track section.title; let i = $index) {
-          @if (section.title && section.content) {
-            <div class="about-card">
-              <h2>{{ section.title }}</h2>
-              <div class="divider"></div>
-              <p>{{ section.content }}</p>
+      @if (isLoading) {
+        <div class="loading-placeholder">
+          <div class="spinner"></div>
+          <p>Загрузка информации о компании...</p>
+        </div>
+      } @else if (hasError) {
+        <div class="error-placeholder">
+          <p>Не удалось загрузить информацию о компании</p>
+          <button (click)="retryLoad()" class="retry-btn">
+            Попробовать снова
+          </button>
+        </div>
+      } @else {
+        <div class="about-content">
+          @if (aboutSections && aboutSections.length > 0) {
+            @for (section of aboutSections; track section.title; let i = $index) {
+              @if (section.title && section.content) {
+                <div class="about-card">
+                  <h2>{{ section.title }}</h2>
+                  <div class="divider"></div>
+                  <p>{{ section.content }}</p>
+                </div>
+              }
+            }
+          } @else {
+            <div class="no-data-placeholder">
+              <p>Информация о компании временно недоступна</p>
             </div>
           }
-        }
-      </div>
+        </div>
+      }
     </div>
   </section>
 
@@ -33,13 +54,17 @@
             
             @if (location.address) {
               <p class="address">{{ location.address }}</p>
-            }
-            
-            @if (location.workHours) {
-              <div class="work-hours">
-                <h3>График работы склада:</h3>
-                <p>{{ location.workHours }}</p>
-              </div>
+              
+              @if (location.workHours) {
+                <div class="work-hours">
+                  <h3>График работы склада:</h3>
+                  <p>{{ location.workHours }}</p>
+                </div>
+              }
+            } @else if (isLoading) {
+              <p class="address">Загрузка адреса...</p>
+            } @else {
+              <p class="address">Адрес не указан</p>
             }
             
             <div class="map-preview">
@@ -57,9 +82,11 @@
               </div>
             </div>
             
-            <button class="open-map-btn" (click)="openMap()">
-              Открыть в Яндекс.Картах
-            </button>
+            @if (location.mapUrl) {
+              <button class="open-map-btn" (click)="openMap()">
+                Открыть в Яндекс.Картах
+              </button>
+            }
           </div>
         </div>
       </div>

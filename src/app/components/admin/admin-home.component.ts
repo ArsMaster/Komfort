@@ -1,10 +1,11 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HomePageService } from '../../services/homepage.service';
 import { CatalogService } from '../../services/catalog.service';
 import { HomePageSettings, Slide, CompanyInfo } from '../../models/homepage-settings.model';
 import { CatalogCategory } from '../../models/catalog.model';
+import { StorageService } from '../../services/storage.service';
 
 type ActiveTab = 'slides' | 'company' | 'settings';
 
@@ -25,6 +26,11 @@ export class AdminHomeComponent implements OnInit {
   editingSlide: Slide | null = null;
   isEditModalOpen = false;
 
+  private homeService = inject(HomePageService);
+  private catalogService = inject(CatalogService); // Добавьте
+  private storageService = inject(StorageService); // Добавьте
+  private cdr = inject(ChangeDetectorRef);
+
   // Для формы добавления нового слайда
   newSlide: Slide = { image: '', title: '', description: '' };
   
@@ -44,10 +50,7 @@ export class AdminHomeComponent implements OnInit {
   // Для хранения временных данных о выбранных файлах
   private fileInputsMap: Map<number, HTMLInputElement> = new Map();
 
-  constructor(
-    private homeService: HomePageService,
-    private catalogService: CatalogService
-  ) {}
+  constructor() {}
 
   ngOnInit(): void {
     this.loadData();
@@ -298,18 +301,102 @@ export class AdminHomeComponent implements OnInit {
   }
 
   // Сохранение всех данных
-  saveAllSettings(): void {
-    // Сохраняем слайды
-    this.homeService.updateSlides(this.slides);
+  async saveAllSettings(): Promise<void> {
+    try {
+      // Обновляем слайды с загрузкой изображений в Supabase Storage
+      await this.updateSlidesWithStorage();
+      
+      // Сохраняем информацию о компании
+      this.updateAboutSections();
+      await this.homeService.updateCompanyInfo(this.companyInfo);
+      
+      // Сохраняем общие настройки
+      await this.homeService.updateSettings(this.settings);
+      
+      this.showNotification('success', 'Все настройки сохранены успешно!');
+    } catch (error: any) {
+      console.error('❌ Ошибка при сохранении настроек:', error);
+      this.showNotification('error', `Ошибка при сохранении: ${error.message}`);
+    }
+  }
+  
+  private async updateSlidesWithStorage(): Promise<void> {
+    console.log('🔄 Обновление слайдов с загрузкой изображений в Supabase Storage...');
     
-    // Сохраняем информацию о компании
-    this.updateAboutSections();
-    this.homeService.updateCompanyInfo(this.companyInfo);
+    const updatedSlides = [];
     
-    // Сохраняем общие настройки
-    this.homeService.updateSettings(this.settings);
+    for (let i = 0; i < this.slides.length; i++) {
+      const slide = this.slides[i];
+      let finalImage = slide.image;
+      
+      // Если слайд имеет Base64 изображение
+      if (slide.image && slide.image.startsWith('data:image')) {
+        console.log(`📤 Загрузка изображения слайда ${i + 1} в Supabase Storage...`);
+        
+        try {
+          // Конвертируем Base64 в File
+          const fileName = `slide-${i + 1}-${Date.now()}.jpg`;
+          const file = this.base64ToFile(slide.image, fileName);
+          
+          // Загружаем в bucket 'slides' в папку 'slides'
+          finalImage = await this.storageService.uploadFile(
+            file,
+            'slides',       // bucket для слайдов
+            'slides'        // папка внутри bucket
+          );
+          
+          console.log(`✅ Изображение слайда ${i + 1} загружено:`, finalImage);
+        } catch (error: any) {
+          console.error(`❌ Ошибка загрузки изображения слайда ${i + 1}:`, error);
+          // Используем дефолтное изображение
+          finalImage = `/assets/default-slide.jpg`;
+        }
+      }
+      // Если это локальный путь (не из Supabase)
+      else if (slide.image && 
+               !slide.image.includes('supabase.co') && 
+               slide.image.startsWith('/assets/')) {
+        // Оставляем локальные пути как есть
+        console.log(`📁 Используем локальное изображение для слайда ${i + 1}`);
+      }
+      // Если нет изображения
+      else if (!slide.image) {
+        finalImage = `/assets/default-slide.jpg`;
+      }
+      
+      updatedSlides.push({
+        ...slide,
+        image: finalImage,
+        order: i + 1
+      });
+    }
     
-    alert('Все настройки сохранены успешно!');
+    // Обновляем слайды в базе данных
+    await this.homeService.updateSlides(updatedSlides);
+    console.log(`✅ Все слайды обновлены (${updatedSlides.length} шт.)`);
+  }
+  
+  // Вспомогательный метод: Base64 → File
+  private base64ToFile(base64: string, fileName: string): File {
+    const arr = base64.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    
+    return new File([u8arr], fileName, { type: mime });
+  }
+  
+  private showNotification(type: 'success' | 'error', message: string): void {
+    if (type === 'success') {
+      alert(`✅ ${message}`);
+    } else {
+      alert(`❌ ${message}`);
+    }
   }
 
   // Очистка ресурсов при уничтожении компонента

@@ -9,5 +9,6 @@ export interface ContactInfo {
     icon: string;
   }[];
   workingHours?: string;
-  mapEmbed?: string;
+  mapEmbed?: string; 
+  aboutSections?: { title: string; content: string }[];
 }

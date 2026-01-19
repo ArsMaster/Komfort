@@ -1,3 +1,4 @@
+<!-- catalog.component.html с прогрессивной загрузкой -->
 <section class="catalog">
   <div class="container">
     <div class="catalog-header">
@@ -7,17 +8,74 @@
     </div>
 
     <div class="catalog-categories">
-      @for (category of categories; track category.id) {
-        <div class="category-card">
-          <div class="category-image">
-            <img [src]="category.image" [alt]="category.title">
+      @for (category of categories$ | async; track category.id) {
+        @if (category.isActive) {
+          <div class="category-card" 
+               (click)="navigateToCategory(category)"
+               [class.clickable]="true">
+            
+            <!-- Контейнер для прогрессивной загрузки -->
+            <div class="category-image-container">
+              <!-- Low-quality placeholder (загружается мгновенно) -->
+              <img 
+                [src]="category.lowQualityImage || '/assets/placeholder-blur.jpg'" 
+                [alt]="category.title + ' (low quality)'"
+                class="category-image-low"
+                loading="eager"
+                width="350"
+                height="300"
+                style="opacity: 1;"
+              />
+              
+              <!-- Основное изображение с ленивой загрузкой -->
+              <img 
+                [src]="getOptimizedImageUrl(category.image, category.id)" 
+                [alt]="category.title"
+                class="category-image-full"
+                loading="lazy"
+                width="350"
+                height="300"
+                (load)="onImageLoad($event, category)"
+                (error)="onImageError($event, category)"
+                style="opacity: 0;"
+              />
+            </div>
+            
+            <!-- Оверлей с заголовком -->
+            <div class="category-title-overlay">
+              <h3 class="category-title">{{ category.title }}</h3>
+            </div>
+            
+            <!-- Индикатор загрузки -->
+           @if (!isImageLoaded(category.id)) {
+          <div class="image-loading-indicator">
+            <div class="loading-spinner"></div>
           </div>
-          
-          <div class="category-title-overlay">
-            <h3 class="category-title">{{ category.title }}</h3>
+            }
           </div>
-        </div>
+        }
+      }
+      
+      <!-- Плейсхолдеры пока грузятся данные -->
+      @if ((categories$ | async) === null) {
+        @for (i of [1,2,3,4]; track i) {
+          <div class="category-card category-card-loading">
+            <div class="category-image-container">
+              <div class="image-placeholder loading-placeholder"></div>
+            </div>
+            <div class="category-title-overlay">
+              <div class="title-placeholder loading-placeholder"></div>
+            </div>
+          </div>
+        }
       }
     </div>
+    
+    <!-- Сообщение если нет категорий -->
+    @if ((categories$ | async)?.length === 0) {
+      <div class="no-categories">
+        <p>Категории не найдены</p>
+      </div>
+    }
   </div>
 </section>

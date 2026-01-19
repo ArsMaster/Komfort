@@ -228,6 +228,104 @@ export class ShopsService {
     return updatedShop;
   }
 
+  private async uploadShopImage(file: File): Promise<string> {
+  try {
+    console.log('📤 [ShopsService] Загрузка изображения магазина...');
+    
+    // Генерируем уникальное имя
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `shops/${fileName}`;
+    
+    console.log('📁 Файл:', file.name);
+    console.log('📂 Путь в Storage:', filePath);
+    console.log('📏 Размер:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+    
+    // Загружаем через SupabaseClient
+    const supabase = this.supabaseService.getClient();
+    
+    // ВАЖНО: upsert: false вместо true!
+    const { data, error } = await supabase.storage
+      .from('shop-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type
+      });
+    
+    if (error) {
+      console.error('❌ Ошибка загрузки:', error);
+      throw error;
+    }
+    
+    console.log('✅ Файл загружен в Supabase:', data);
+    
+    // Получаем публичный URL
+    const { data: urlData } = supabase.storage
+      .from('shop-images')
+      .getPublicUrl(filePath);
+    
+    const publicUrl = urlData.publicUrl;
+    console.log('🔗 Публичный URL:', publicUrl);
+    
+    return publicUrl;
+    
+  } catch (error: any) {
+    console.error('❌ Ошибка в uploadShopImage:', error);
+    throw error;
+  }
+}
+
+private getPublicUrl(supabase: any, filePath: string): string {
+  const { data: urlData } = supabase.storage
+    .from('shop-images')
+    .getPublicUrl(filePath);
+  
+  const publicUrl = urlData.publicUrl;
+  console.log('🔗 Публичный URL:', publicUrl);
+  return publicUrl;
+}
+
+  async uploadShopImages(files: File[]): Promise<string[]> {
+  console.log(`📤 [ShopsService] Загрузка ${files.length} изображений магазина...`);
+  
+  if (this.storageMode !== 'supabase') {
+    console.warn('⚠️ Режим не Supabase, возвращаем локальные URL');
+    return files.map(file => URL.createObjectURL(file));
+  }
+  
+  try {
+    const uploadPromises = files.map(file => this.uploadShopImage(file));
+    const urls = await Promise.all(uploadPromises);
+    
+    console.log(`✅ Изображения загружены:`, urls);
+    return urls;
+  } catch (error) {
+    console.error('❌ Ошибка загрузки изображений:', error);
+    throw error;
+  }
+}
+
+/**
+ * Проверяет, является ли URL ссылкой на Supabase Storage
+ */
+isSupabaseStorageUrl(url: string): boolean {
+  return url.includes('supabase.co/storage') || url.includes('/storage/v1/object/public/');
+}
+
+/**
+ * Извлекает имя файла из URL
+ */
+extractFileNameFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const pathParts = urlObj.pathname.split('/');
+    return pathParts[pathParts.length - 1];
+  } catch (error) {
+    return url;
+  }
+}
+
   async deleteShop(id: string): Promise<boolean> {
     console.log('🗑️ Удаление магазина ID:', id, 'в режиме:', this.storageMode);
     

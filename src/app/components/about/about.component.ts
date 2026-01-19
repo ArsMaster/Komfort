@@ -4,8 +4,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ContactsComponent } from '../contacts/contacts.component';
 import { HomePageService } from '../../services/homepage.service';
-import { Subject, interval } from 'rxjs';
+import { ContactService } from '../../services/contact.service';
+import { Subject, interval, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { ChangeDetectorRef } from '@angular/core';
 
 declare const ymaps: any;
 
@@ -17,51 +19,165 @@ declare const ymaps: any;
   styleUrls: ['./about.component.scss']
 })
 export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
+  private cdr = inject(ChangeDetectorRef);
   private homeService = inject(HomePageService);
+  private contactService = inject(ContactService);
   private destroy$ = new Subject<void>();
   
-  // Данные для секции "О компании" - получаем из сервиса
+  // Данные для секции "О компании" - получаем из HomePageService
   aboutSections: { title: string; content: string }[] = [];
-
+  
   // Данные для секции "Схема проезда"
+  companyInfo: any = null;
   location = {
     address: '',
     workHours: '',
     mapUrl: '',
-    coordinates: [43.513901, 46.356290] // координаты по умолчанию
+    coordinates: [43.513901, 46.356290]
   };
 
   isMapLoaded = false;
+  isLoading = true;
+  hasError = false;
 
   ngOnInit(): void {
-    this.loadCompanyInfo();
+    console.log('🔍 AboutComponent инициализирован');
     
-    // Автоматическое обновление данных каждые 30 секунд
-    interval(30000)
+    // Подписываемся на данные из HomePageService (где они успешно загружаются)
+    this.homeService.companyInfo$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.loadCompanyInfo();
+      .subscribe({
+        next: (companyInfo) => {
+          console.log('🏢 AboutComponent получил данные из HomePageService:', {
+            hasData: !!companyInfo,
+            hasAboutSections: !!companyInfo?.aboutSections,
+            aboutSectionsCount: companyInfo?.aboutSections?.length || 0,
+            hasAddress: !!companyInfo?.address
+          });
+          
+          this.companyInfo = companyInfo;
+          this.isLoading = false;
+          this.hasError = false;
+          
+          // Обновляем aboutSections
+          if (companyInfo?.aboutSections && companyInfo.aboutSections.length > 0) {
+            console.log('✅ Загружаем aboutSections из HomePageService:', companyInfo.aboutSections.length);
+            this.aboutSections = [...companyInfo.aboutSections];
+          } else {
+            console.log('⚠️ About sections не найдены, используем дефолтные');
+            this.aboutSections = this.getDefaultSections();
+          }
+          
+          // Обновляем location
+          this.updateLocationFromCompanyInfo(companyInfo);
+          
+          // Принудительное обновление view
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('❌ Ошибка загрузки данных из HomePageService:', error);
+          this.isLoading = false;
+          this.hasError = true;
+          this.aboutSections = this.getDefaultSections();
+        }
       });
+    
+    // Также подписываемся на ContactService для адреса (если нужно)
+    this.contactService.contacts$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(contacts => {
+        // Используем контакты только если нет данных из HomePageService
+        if (!this.companyInfo?.address && contacts?.office) {
+          console.log('📍 Используем адрес из ContactService');
+          this.updateLocationFromContacts(contacts);
+        }
+      });
+    
+    // Загружаем начальные данные
+    this.loadInitialData();
+  }
+  
+  private loadInitialData(): void {
+    // Пробуем получить данные сразу (они могут быть уже загружены)
+    const companyInfo = this.homeService.getCompanyInfo();
+    console.log('📦 Начальные данные из HomePageService:', {
+      address: companyInfo.address,
+      aboutSectionsCount: companyInfo.aboutSections?.length || 0
+    });
+    
+    if (companyInfo && (companyInfo.address || companyInfo.aboutSections?.length > 0)) {
+      this.companyInfo = companyInfo;
+      this.isLoading = false;
+      
+      if (companyInfo.aboutSections && companyInfo.aboutSections.length > 0) {
+        this.aboutSections = [...companyInfo.aboutSections];
+      } else {
+        this.aboutSections = this.getDefaultSections();
+      }
+      
+      this.updateLocationFromCompanyInfo(companyInfo);
+    } else {
+      console.log('⏳ Данные еще не загружены, ждем...');
+      this.aboutSections = this.getDefaultSections();
+    }
+    
+    // Через 3 секунды проверяем, загрузились ли данные
+    setTimeout(() => {
+      if (this.isLoading) {
+        console.log('⚠️ Таймаут загрузки данных');
+        this.isLoading = false;
+        this.hasError = true;
+        this.aboutSections = this.getDefaultSections();
+      }
+    }, 3000);
+  }
+  
+  private updateLocationFromCompanyInfo(companyInfo: any): void {
+    if (!companyInfo) return;
+    
+    const address = companyInfo.address || '';
+    const workHours = companyInfo.workHours || '';
+    
+    if (address !== this.location.address || workHours !== this.location.workHours) {
+      console.log('📍 Обновляем location из CompanyInfo:', { address, workHours });
+      
+      this.location.address = address;
+      this.location.workHours = workHours;
+      
+      if (address) {
+        this.location.mapUrl = `https://yandex.ru/maps/?text=${encodeURIComponent(address)}`;
+      }
+      
+      // Если карта уже загружена, обновляем ее
+      if (this.isMapLoaded && address) {
+        console.log('🔄 Перезагружаем карту с новым адресом');
+        this.initYandexMap();
+      }
+    }
+  }
+  
+  private updateLocationFromContacts(contacts: any): void {
+    if (!contacts) return;
+    
+    const address = contacts.office || '';
+    const workHours = contacts.workingHours || '';
+    
+    if (address && address !== this.location.address) {
+      console.log('📍 Обновляем location из ContactService:', { address, workHours });
+      
+      this.location.address = address;
+      this.location.workHours = workHours;
+      this.location.mapUrl = `https://yandex.ru/maps/?text=${encodeURIComponent(address)}`;
+      
+      if (this.isMapLoaded) {
+        this.initYandexMap();
+      }
+    }
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  loadCompanyInfo(): void {
-    const companyInfo = this.homeService.getCompanyInfo();
-    
-    // Загружаем секции "О компании" из сервиса
-    if (companyInfo.aboutSections && companyInfo.aboutSections.length > 0) {
-      this.aboutSections = [...companyInfo.aboutSections];
-    } else {
-      // Значения по умолчанию, если в сервисе нет данных
-      this.aboutSections = this.getDefaultSections();
-    }
-    
-    // Загружаем контактную информацию
-    this.updateLocationInfo(companyInfo);
   }
 
   private getDefaultSections(): { title: string; content: string }[] {
@@ -72,7 +188,7 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       {
         title: 'Современный модельный ряд',
-        content: 'Komfort следит за тенденциями на рынке товаров для дома и свежими идеями в дизайне интерьеров. Наш коллектив является постоянным участником международных выставок и форумов, где набирается опыта и делится своим. Продукция представлена более чем в 50 салонах по всей стране.'
+        content: 'Komfort следит за тенденциями на рынке товаров для дома и свежими идеями в дизайне интерьеров. Наш коллектив является постоянным участником международных выставок и форумов, где набирается опыта и делится своим. Продукция представлена более чем в 50 салонах по всей страны.'
       },
       {
         title: 'Производство',
@@ -81,31 +197,28 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
     ];
   }
 
-  private updateLocationInfo(companyInfo: any): void {
-    // Используем адрес из сервиса или значение по умолчанию
-    const address = companyInfo.address || 'Чеченская Республика, г. Шелковская, ул. Косая, 47';
-    const workHours = companyInfo.workHours || 'ПН - ВС с 8:00 до 20:00';
-    
-    // Обновляем location только если данные изменились
-    if (this.location.address !== address || this.location.workHours !== workHours) {
-      this.location.address = address;
-      this.location.workHours = workHours;
-      
-      // Генерируем URL для Яндекс.Карт на основе адреса
-      this.location.mapUrl = `https://yandex.ru/maps/?text=${encodeURIComponent(address)}`;
-      
-      // Перезагружаем карту если она уже была загружена
-      if (this.isMapLoaded) {
-        this.initYandexMap();
-      }
+  ngAfterViewInit(): void {
+    // Загружаем карту только если есть адрес
+    if (this.location.address) {
+      this.loadYandexMaps();
+    } else {
+      // Ждем немного, возможно адрес еще загружается
+      setTimeout(() => {
+        if (this.location.address) {
+          this.loadYandexMaps();
+        } else {
+          console.log('📍 Адрес для карты не загружен');
+        }
+      }, 1000);
     }
   }
 
-  ngAfterViewInit(): void {
-    this.loadYandexMaps();
-  }
-
   loadYandexMaps(): void {
+    if (!this.location.address) {
+      console.log('📍 Нет адреса для загрузки карты');
+      return;
+    }
+    
     if (typeof ymaps !== 'undefined') {
       this.initYandexMap();
       return;
@@ -128,6 +241,12 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   initYandexMap(): void {
+    if (!this.location.address) {
+      console.log('📍 Нет адреса для инициализации карты');
+      this.showStaticMapFallback();
+      return;
+    }
+    
     ymaps.ready(() => {
       try {
         const mapElement = document.getElementById('yandex-map');
@@ -137,10 +256,8 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
           return;
         }
 
-        // Очищаем карту перед созданием новой
         mapElement.innerHTML = '';
         
-        // Используем геокодирование для получения координат по адресу
         ymaps.geocode(this.location.address, {
           results: 1
         }).then((res: any) => {
@@ -151,13 +268,11 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
             coordinates = firstGeoObject.geometry.getCoordinates();
             this.location.coordinates = coordinates;
           } else {
-            // Если адрес не найден, используем координаты по умолчанию
             coordinates = this.location.coordinates;
           }
           
           this.createMap(coordinates);
         }).catch(() => {
-          // В случае ошибки используем координаты по умолчанию
           this.createMap(this.location.coordinates);
         });
         
@@ -192,6 +307,7 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
 
     map.geoObjects.add(placemark);
     this.isMapLoaded = true;
+    console.log('🗺️ Карта Яндекс успешно создана');
   }
 
   showStaticMapFallback(): void {
@@ -200,11 +316,13 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
       mapElement.innerHTML = `
         <div style="padding: 20px; text-align: center;">
           <p>Карта временно недоступна</p>
-          <p><strong>Адрес:</strong> ${this.location.address}</p>
-          <p><strong>График работы:</strong> ${this.location.workHours}</p>
-          <a href="${this.location.mapUrl}" target="_blank" style="color: #007bff;">
-            Открыть в Яндекс.Картах
-          </a>
+          <p><strong>Адрес:</strong> ${this.location.address || 'Не указан'}</p>
+          <p><strong>График работы:</strong> ${this.location.workHours || 'Не указан'}</p>
+          ${this.location.mapUrl ? `
+            <a href="${this.location.mapUrl}" target="_blank" style="color: #007bff;">
+              Открыть в Яндекс.Картах
+            </a>
+          ` : ''}
         </div>
       `;
     }
@@ -215,6 +333,27 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openMap(): void {
-    window.open(this.location.mapUrl, '_blank');
+    if (this.location.mapUrl) {
+      window.open(this.location.mapUrl, '_blank');
+    } else {
+      console.warn('Нет URL для открытия карты');
+    }
+  }
+  
+  retryLoad(): void {
+    console.log('🔄 Повторная попытка загрузки данных');
+    this.isLoading = true;
+    this.hasError = false;
+    
+    // Запускаем обновление данных
+    this.homeService.forceLoadFromSupabase();
+    
+    // Сбрасываем таймаут
+    setTimeout(() => {
+      if (this.isLoading) {
+        this.isLoading = false;
+        this.hasError = true;
+      }
+    }, 3000);
   }
 }

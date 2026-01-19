@@ -23,11 +23,67 @@
         </div>
       }
       
-      <div class="product-category">{{ product.categoryName }}</div>
+      <div class="product-category">{{ product.categoryName || product.category }}</div>
       <div class="product-stock" [class.low-stock]="product.stock < 3">
         {{ product.stock }} в наличии
       </div>
     </div>
+  </div>
+  
+  <!-- ИНФОРМАЦИЯ О ТОВАРЕ -->
+  <div class="product-info">
+    <h3 class="product-title">{{ product.name }}</h3>
+    
+    <!-- Цена -->
+    <div class="product-price">
+      {{ product.price | number:'1.0-0' }} ₽
+    </div>
+    
+    <!-- Особенности (features) -->
+    @if (product.features && product.features.length > 0) {
+      <div class="product-features">
+        <ul class="features-list">
+          @for (feature of getFirstFeatures(3); track $index) {
+            <li class="feature-item">
+              <span class="feature-icon">✓</span> {{ feature }}
+            </li>
+          }
+        </ul>
+        @if (product.features.length > 3) {
+          <div class="more-features">
+            + ещё {{ product.features.length - 3 }} особенностей
+          </div>
+        }
+      </div>
+    }
+    
+    <!-- Описание товара -->
+    @if (product.description) {
+      <p class="product-description">
+        {{ product.description | slice:0:120 }}{{ product.description.length > 120 ? '...' : '' }}
+      </p>
+    }
+    
+    <!-- Кнопки действий -->
+    <!-- <div class="product-actions">
+      <button class="btn-details" (click)="viewDetails()">
+        Подробнее
+      </button>
+      
+      <button class="btn-cart" 
+              [disabled]="product.stock <= 0"
+              (click)="addToCart()">
+        {{ product.stock > 0 ? 'В корзину' : 'Нет в наличии' }}
+      </button>
+    </div> -->
+    
+    <!-- Админские кнопки (если нужно) -->
+    @if (isAdmin) {
+      <div class="admin-actions">
+        <button class="btn-edit" (click)="editProduct()">Редактировать</button>
+        <button class="btn-delete" (click)="deleteProduct()">Удалить</button>
+      </div>
+    }
   </div>
   
   <!-- Галерея (полноэкранный просмотр) -->
@@ -68,6 +124,4 @@
       </div>
     </div>
   }
-  
-  <!-- ... остальной код без изменений ... -->
 </div>

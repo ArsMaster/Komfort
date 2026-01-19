@@ -13,6 +13,7 @@ import { ContactInfo } from '../../models/contact.model';
   styleUrls: ['./contacts.component.scss']
 })
 export class ContactsComponent implements OnInit {
+  
   contacts: ContactInfo = {
     id: 0,
     phone: '',
@@ -28,10 +29,10 @@ export class ContactsComponent implements OnInit {
   };
 
   isSubmitted = false;
-  errorMessage = ''; // <-- Добавьте для отображения ошибок
-  isLoading = false; // <-- Добавьте для индикации загрузки
-  lastSubmitTime = 0; // <-- Для защиты от спама
-  MIN_SUBMIT_INTERVAL = 30000; // 30 секунд между отправками
+  errorMessage = ''; 
+  isLoading = false; 
+  lastSubmitTime = 0; 
+  MIN_SUBMIT_INTERVAL = 30000;
 
   // Добавьте HttpClient в конструктор
   constructor(
@@ -133,7 +134,7 @@ export class ContactsComponent implements OnInit {
   // Метод для отправки на сервер
   private submitToServer(): void {
     // Если у вас есть бэкенд API
-    const apiUrl = 'https://ваш-домен.ru/api/contact-form'; // Замените на ваш URL
+    const apiUrl = 'https://td-komfort.com/api/contact-form'; // Замените на ваш URL
     
     this.http.post(apiUrl, {
       name: this.contactForm.name,

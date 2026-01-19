@@ -240,3 +240,363 @@ textarea.form-control {
     margin: 0;
   }
 }
+
+/* Сообщения */
+.alert {
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  position: relative;
+  
+  &.alert-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+  }
+  
+  &.alert-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+  }
+  
+  .close-btn {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+/* Индикатор загрузки */
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+  color: #1976d2;
+  
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #1976d2;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+}
+
+/* Поля с кнопками действий */
+.input-with-action {
+  display: flex;
+  gap: 8px;
+  
+  .form-control {
+    flex: 1;
+  }
+  
+  .btn-test {
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    cursor: pointer;
+    
+    &:hover:not(:disabled) {
+      background: #e9ecef;
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+/* Быстрые кнопки соцсетей */
+.quick-social-buttons {
+  display: inline-flex;
+  gap: 5px;
+  margin-left: 15px;
+  
+  .btn-social {
+    padding: 4px 8px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    
+    &:hover {
+      background: #e9ecef;
+    }
+    
+    .social-icon {
+      font-size: 12px;
+      font-weight: bold;
+    }
+  }
+}
+
+/* Предпросмотр URL */
+.url-preview {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Состояние "пусто" */
+.empty-state {
+  text-align: center;
+  padding: 30px;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  color: #6c757d;
+}
+
+/* Дополнительные действия */
+.additional-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 25px 0;
+  
+  .btn-outline {
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #6c757d;
+    color: #6c757d;
+    border-radius: 4px;
+    cursor: pointer;
+    
+    &:hover:not(:disabled) {
+      background: #f8f9fa;
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+  
+  .file-input {
+    display: none;
+  }
+}
+
+/* Режим хранения */
+.storage-mode {
+  margin-top: 10px;
+  text-align: right;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .social-item .row {
+    flex-direction: column;
+    gap: 10px;
+    
+    .col-auto {
+      align-self: flex-end;
+    }
+  }
+  
+  .additional-actions {
+    flex-direction: column;
+  }
+  
+  .quick-social-buttons {
+    margin-left: 0;
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+/* Индикатор режима */
+.storage-mode {
+  margin-bottom: 20px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mode-indicator {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  
+  &.mode-supabase {
+    background: #3ecf8e;
+    color: white;
+  }
+  
+  &.mode-local {
+    background: #6c757d;
+    color: white;
+  }
+}
+
+.unsaved-indicator {
+  color: #ff9800;
+  font-size: 12px;
+  animation: pulse 2s infinite;
+}
+
+/* Обновленные алерты */
+.alert {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  .alert-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .alert-icon {
+    font-weight: bold;
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0.7;
+    
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+/* Быстрые шаблоны соцсетей */
+.socialTemplates {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.btn-social {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: #e9ecef;
+    transform: scale(1.1);
+  }
+  
+  .social-icon {
+    font-size: 14px;
+    font-weight: bold;
+  }
+}
+
+/* Дополнительные стили для полей */
+.form-group {
+  position: relative;
+}
+
+.url-preview {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.social-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  
+  .social-icon {
+    font-weight: bold;
+    font-size: 14px;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+}
+
+/* Кнопки действий */
+.form-actions {
+  .additional-actions {
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+  }
+}
+
+/* Пульсация для несохраненных изменений */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .storage-mode {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  
+  .quick-social-buttons {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  
+  .social-item .row {
+    flex-direction: column;
+    gap: 10px;
+    
+    .col-auto {
+      align-self: flex-end;
+    }
+  }
+}

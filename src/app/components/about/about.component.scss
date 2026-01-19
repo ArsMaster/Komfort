@@ -223,3 +223,80 @@
     background: #f54a4a;
   }
 }
+
+/* Добавьте в конце файла, после всех стилей */
+
+/* Планшеты и небольшие ноутбуки */
+@media (max-width: 992px) {
+  .section-title {
+    font-size: 36px;
+    margin-bottom: 30px;
+  }
+  
+  .container {
+    padding: 0 15px;
+  }
+}
+
+/* Планшеты в портретной ориентации */
+@media (max-width: 768px) {
+  .section-title {
+    font-size: 32px;
+    margin-bottom: 25px;
+    letter-spacing: 0.5px;
+  }
+  
+  .about-section,
+  .map-section {
+    padding: 40px 0;
+  }
+  
+  .about-card h2 {
+    font-size: 22px;
+  }
+  
+  .address {
+    font-size: 16px;
+  }
+}
+
+/* Мобильные телефоны */
+@media (max-width: 576px) {
+  .section-title {
+    font-size: 28px;
+    margin-bottom: 20px;
+    padding: 0 10px;
+  }
+  
+  .about-card h2 {
+    font-size: 20px;
+  }
+  
+  .address-card {
+    padding: 25px;
+  }
+  
+  .map-container {
+    height: 300px;
+  }
+  
+  .map-points {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Очень маленькие телефоны */
+@media (max-width: 480px) {
+  .section-title {
+    font-size: 24px;
+    margin-bottom: 15px;
+  }
+  
+  .about-card h2 {
+    font-size: 18px;
+  }
+  
+  .address {
+    font-size: 15px;
+  }
+}

@@ -1,7 +1,7 @@
 .slider-container {
   position: relative;
   width: 100%;
-  height: 950px; /* ← ЗДЕСЬ ИЗМЕНИТЬ */
+  height: 950px;
   overflow: hidden;
 }
 
@@ -35,9 +35,8 @@
 
 .slide-content {
   position: absolute;
-  bottom: 400px; /* Увеличиваем отступ снизу - сдвигаем ВВЕРХ */
-  right: auto;   /* Изменяем left на right - сдвигаем ВПРАВО */
-  left: 200px;    /* Отключаем left если был */
+  bottom: 400px;
+  left: 200px;
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   max-width: 600px;
@@ -56,6 +55,7 @@
   }
 }
 
+/* Кнопки навигации - ИСПРАВЛЕННЫЕ (одинарные) */
 .slider-btn {
   position: absolute;
   top: 50%;
@@ -63,7 +63,7 @@
   background-color: rgba(0, 0, 0, 0.6);
   border: none;
   color: white;
-  font-size: 24px;
+  font-size: 36px; /* Увеличиваем размер шрифта */
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -73,6 +73,8 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  padding: 0;
+  line-height: 1;
   
   &:hover {
     background-color: rgba(0, 0, 0, 0.9);
@@ -81,31 +83,20 @@
   
   &.prev {
     left: 30px;
-    
-    &::before {
-      content: '‹';
-      font-size: 30px;
-      font-weight: bold;
-      margin-right: 3px;
-    }
   }
   
   &.next {
     right: 30px;
-    
-    &::before {
-      content: '›';
-      font-size: 30px;
-      font-weight: bold;
-      margin-left: 3px;
-    }
   }
   
-  span {
-    display: none;
+  /* Убираем все псевдоэлементы - только текст внутри кнопки */
+  &::before,
+  &::after {
+    display: none !important;
   }
 }
 
+/* Индикаторы (точки) - ИСПРАВЛЕННЫЕ */
 .slider-indicators {
   position: absolute;
   bottom: 20px;
@@ -125,7 +116,7 @@
   background-color: transparent;
   cursor: pointer;
   padding: 0;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
   
   &.active {
     background-color: white;
@@ -136,9 +127,52 @@
   }
 }
 
-/* Адаптивность - обновите для новой высоты */
+/* Загрузчик */
+.slider-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 950px; /* Соответствует высоте слайдера */
+  background: #f5f5f5;
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #ddd;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+  
+  p {
+    color: #666;
+    font-size: 16px;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Скрытие/показ слайдов */
+.slider-wrapper.hidden {
+  display: none;
+}
+
+.slider-wrapper {
+  display: block;
+}
+
+/* Адаптивность */
 @media (max-width: 1200px) {
   .slider-container {
+    height: 700px;
+  }
+  
+  .slider-loading {
     height: 700px;
   }
 }
@@ -147,10 +181,31 @@
   .slider-container {
     height: 600px;
   }
+  
+  .slider-loading {
+    height: 600px;
+  }
+  
+  .slide-content {
+    bottom: 300px;
+    left: 100px;
+    
+    h2 {
+      font-size: 2.8rem;
+    }
+    
+    p {
+      font-size: 1.8rem;
+    }
+  }
 }
 
 @media (max-width: 768px) {
   .slider-container {
+    height: 500px;
+  }
+  
+  .slider-loading {
     height: 500px;
   }
   
@@ -171,12 +226,16 @@
   .slider-btn {
     width: 40px;
     height: 40px;
-    font-size: 1.5rem;
+    font-size: 24px;
   }
 }
 
 @media (max-width: 480px) {
   .slider-container {
+    height: 400px;
+  }
+  
+  .slider-loading {
     height: 400px;
   }
   

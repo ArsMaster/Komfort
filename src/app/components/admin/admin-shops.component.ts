@@ -1,10 +1,12 @@
-import { Component, OnInit, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ShopsService } from '../../services/shops.service';
 import { FileUploadService } from '../../services/file-upload.service';
 import { Shop } from '../../models/shop.model';
 import { lastValueFrom } from 'rxjs';
+import { StorageService } from '../../services/storage.service';
+import { SupabaseService } from '../../services/supabase.service';
 
 @Component({
   selector: 'app-admin-shops',
@@ -38,7 +40,8 @@ export class AdminShopsComponent implements OnInit {
   constructor(
     private shopsService: ShopsService,
     private fileUploadService: FileUploadService,
-    private cdr: ChangeDetectorRef // ← ДОБАВЬТЕ ЭТО
+    private cdr: ChangeDetectorRef,
+    private supabaseService: SupabaseService
   ) {}
 
   ngOnInit(): void {
@@ -141,122 +144,205 @@ export class AdminShopsComponent implements OnInit {
     this.cdr.detectChanges(); // ← ОБНОВИТЕ ОТОБРАЖЕНИЕ
   }
 
-  async saveShop(): Promise<void> {
-    console.log('🔄 Начало сохранения магазина');
+async saveShop(): Promise<void> {
+  console.log('🔄 Начало сохранения магазина');
+  
+  try {
+    this.isUploading = true;
+    this.cdr.detectChanges();
     
-    try {
-      this.isUploading = true;
-      this.cdr.detectChanges(); // ← НЕМЕДЛЕННО ОБНОВИТЕ ОТОБРАЖЕНИЕ
-      
-      let finalImageUrl = '';
-      
-      // Если есть загруженный файл, загружаем его на сервер
-      if (this.newShop.imageFile) {
-        console.log('📤 Загрузка файла изображения...');
-        try {
-          const result = await lastValueFrom(
-            this.fileUploadService.uploadShopImage(this.newShop.imageFile)
+    let finalImageUrl = '';
+    
+    // Если есть загруженный файл, загружаем его в Supabase Storage
+    if (this.newShop.imageFile) {
+      console.log('📤 Загрузка файла изображения в Supabase Storage...');
+      try {
+        // Используем shopsService для загрузки
+        finalImageUrl = await this.shopsService.uploadShopImages([this.newShop.imageFile])
+          .then(urls => urls[0]);
+        console.log('✅ Файл загружен в Supabase Storage:', finalImageUrl);
+      } catch (uploadError: any) {
+        console.error('❌ Ошибка загрузки файла в Supabase:', uploadError);
+        
+        if (uploadError.message.includes('bucket') || uploadError.message.includes('policy')) {
+          this.showNotification('error', 
+            'Ошибка конфигурации Storage. Проверьте:\n' +
+            '1. Создан ли bucket "shop-images" в Supabase Dashboard\n' +
+            '2. Включен ли режим "Public"\n' +
+            '3. Отключены ли RLS политики (или настроены правильно)'
           );
-          finalImageUrl = result.url;
-          console.log('✅ Файл загружен:', finalImageUrl);
-        } catch (uploadError) {
-          console.error('❌ Ошибка загрузки файла:', uploadError);
-          throw new Error('Не удалось загрузить изображение');
+        } else {
+          this.showNotification('error', `Не удалось загрузить изображение: ${uploadError.message}`);
         }
-      } else if (this.editingShop?.imageUrl) {
-        // Используем существующее изображение при редактировании
-        finalImageUrl = this.editingShop.imageUrl;
-        console.log('🖼️ Используем существующее изображение');
-      } else if (this.newShop.imageUrl) {
-        // Используем URL из поля ввода
-        finalImageUrl = this.newShop.imageUrl;
-        console.log('🔗 Используем URL из поля');
-      } else {
-        // Дефолтное изображение
-        finalImageUrl = 'assets/default-shop.jpg';
+        throw uploadError;
+      }
+    } 
+    // Если редактируем и есть Base64 изображение
+    else if (this.editingShop?.imageUrl && this.editingShop.imageUrl.startsWith('data:image')) {
+      console.log('🔄 Конвертация Base64 изображения магазина...');
+      
+      try {
+        // Конвертируем Base64 в File
+        const fileName = `${this.editingShop.title || 'shop'}-${Date.now()}.jpg`;
+        const file = this.base64ToFile(this.editingShop.imageUrl, fileName);
+        
+        // Загружаем в Supabase Storage
+        finalImageUrl = await this.uploadFileToSupabase(
+          file,  // ← ИСПРАВЛЕНО: передаем file, а не this.newShop.imageFile
+          'shop-images',
+          'shops'
+        );
+        console.log('✅ Base64 изображение загружено в Supabase:', finalImageUrl);
+      } catch (conversionError: any) {
+        console.error('❌ Ошибка конвертации Base64:', conversionError);
+        // Используем дефолтное изображение
+        finalImageUrl = '/assets/default-shop.jpg';
         console.log('🏷️ Используем дефолтное изображение');
       }
+    }
+    // Если редактируем и есть существующее изображение (не Base64)
+    else if (this.editingShop?.imageUrl) {
+      finalImageUrl = this.editingShop.imageUrl;
+      console.log('🖼️ Используем существующее изображение:', finalImageUrl);
+    }
+    // Если есть URL из поля ввода
+    else if (this.newShop.imageUrl) {
+      finalImageUrl = this.newShop.imageUrl;
+      console.log('🔗 Используем URL из поля:', finalImageUrl);
+    }
+    // Дефолтное изображение
+    else {
+      finalImageUrl = '/assets/default-shop.jpg';
+      console.log('🏷️ Используем дефолтное изображение');
+    }
 
-      if (this.editingShop) {
-        console.log('✏️ Редактирование магазина:', this.editingShop.title);
-        console.log('📝 Данные для сохранения:', {
-          title: this.editingShop.title,
-          address: this.editingShop.address,
-          imageUrl: finalImageUrl
-        });
-        
-        await this.shopsService.updateShop(
-          this.editingShop.id, 
-          {
-            title: this.editingShop.title,
-            address: this.editingShop.address,
-            description: this.editingShop.description,
-            imageUrl: finalImageUrl,
-            phone: this.editingShop.phone,
-            email: this.editingShop.email,
-            workingHours: this.editingShop.workingHours
-          }
-        );
-        console.log('✅ Магазин обновлен в сервисе');
-        alert(`Магазин "${this.editingShop.title}" обновлен!`);
-      } else {
-        console.log('➕ Добавление нового магазина');
-        console.log('📝 Данные:', {
-          title: this.newShop.title,
-          address: this.newShop.address,
-          imageUrl: finalImageUrl
-        });
-        
-        const newShop = await this.shopsService.addShop({
-          title: this.newShop.title,
-          address: this.newShop.address,
-          description: this.newShop.description,
-          imageUrl: finalImageUrl,
-          phone: this.newShop.phone,
-          email: this.newShop.email,
-          workingHours: this.newShop.workingHours
-        });
-        
-        console.log('✅ Новый магазин добавлен:', newShop);
-        alert(`Магазин "${newShop.title}" добавлен!`);
-      }
+    const shopData = {
+      title: this.editingShop ? this.editingShop.title : this.newShop.title,
+      address: this.editingShop ? this.editingShop.address : this.newShop.address,
+      description: this.editingShop ? this.editingShop.description : this.newShop.description,
+      imageUrl: finalImageUrl,
+      phone: this.editingShop ? this.editingShop.phone : this.newShop.phone,
+      email: this.editingShop ? this.editingShop.email : this.newShop.email,
+      workingHours: this.editingShop ? this.editingShop.workingHours : this.newShop.workingHours
+    };
+
+    if (this.editingShop) {
+      console.log('✏️ Редактирование магазина:', this.editingShop.title);
+      console.log('📝 Данные для сохранения:', shopData);
       
-      console.log('✅ Все операции завершены успешно');
+      await this.shopsService.updateShop(
+        this.editingShop.id, 
+        shopData
+      );
       
-      // ЯВНО сбросить перед закрытием формы
-      this.isUploading = false;
-      this.cdr.detectChanges(); // ← ОБНОВИТЕ ПЕРЕД ЗАКРЫТИЕМ
+      console.log('✅ Магазин обновлен в сервисе');
+      this.showNotification('success', `Магазин "${this.editingShop.title}" обновлен!`);
+    } else {
+      console.log('➕ Добавление нового магазина');
+      console.log('📝 Данные:', shopData);
       
-      // Дать время Angular обновить DOM
-      setTimeout(() => {
-        this.cancelEdit();
-        this.loadShops();
-      }, 100);
+      const newShop = await this.shopsService.addShop(shopData);
       
-    } catch (error: any) {
-      console.error('❌ Ошибка при сохранении магазина:', error);
-      
-      // ОБЯЗАТЕЛЬНО сбросить при ошибке
-      this.isUploading = false;
-      this.cdr.detectChanges();
-      
-      // Проверяем тип ошибки
-      if (error.status === 413) {
-        alert('Файл слишком большой. Максимальный размер: 5MB');
-      } else if (error.status === 415) {
-        alert('Неподдерживаемый формат файла');
-      } else if (error.message) {
-        alert(`Ошибка: ${error.message}`);
-      } else {
-        alert('Произошла ошибка при сохранении магазина. Пожалуйста, попробуйте снова.');
-      }
-    } finally {
-      // Дополнительная защита на случай если блок try-catch не сработал
-      setTimeout(() => {
-        this.isUploading = false;
-        this.cdr.detectChanges();
-        console.log('🔄 finally блок: isUploading сброшен');
-      }, 1000);
+      console.log('✅ Новый магазин добавлен:', newShop);
+      this.showNotification('success', `Магазин "${newShop.title}" добавлен!`);
+    }
+    
+    console.log('✅ Все операции завершены успешно');
+    
+    // Сбрасываем флаг загрузки
+    this.isUploading = false;
+    this.cdr.detectChanges();
+    
+    // Даем время Angular обновить DOM
+    setTimeout(() => {
+      this.cancelEdit();
+      this.loadShops();
+    }, 100);
+    
+  } catch (error: any) {
+    console.error('❌ Ошибка при сохранении магазина:', error);
+    
+    // Обязательно сбрасываем флаг при ошибке
+    this.isUploading = false;
+    this.cdr.detectChanges();
+    
+    // Проверяем тип ошибки
+    if (error.status === 413) {
+      this.showNotification('error', 'Файл слишком большой. Максимальный размер: 10MB');
+    } else if (error.status === 415) {
+      this.showNotification('error', 'Неподдерживаемый формат файла');
+    } else if (error.message) {
+      this.showNotification('error', `Ошибка: ${error.message}`);
+    } else {
+      this.showNotification('error', 'Произошла ошибка при сохранении магазина. Пожалуйста, попробуйте снова.');
+    }
+  }
+}
+
+  private async uploadFileToSupabase(file: File, bucket: string, folder?: string): Promise<string> {
+  try {
+    console.log('📤 Загрузка файла напрямую через SupabaseClient');
+    
+    // Генерируем уникальное имя
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = folder ? `${folder}/${fileName}` : fileName;
+    
+    console.log('📁 Файл:', fileName);
+    console.log('🪣 Bucket:', bucket);
+    console.log('📂 Путь:', filePath);
+    
+    // Загружаем через SupabaseClient
+    const supabase = this.supabaseService.getClient();
+    
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: file.type
+      });
+    
+    if (error) {
+      console.error('❌ Ошибка загрузки в Supabase:', error);
+      throw error;
+    }
+    
+    // Получаем публичный URL
+    const { data: urlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(filePath);
+    
+    console.log('✅ Файл загружен:', urlData.publicUrl);
+    return urlData.publicUrl;
+    
+  } catch (error: any) {
+    console.error('❌ Ошибка в uploadFileToSupabase:', error);
+    throw error;
+  }
+}
+
+  // Вспомогательный метод: Base64 → File
+  private base64ToFile(base64: string, fileName: string): File {
+    const arr = base64.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    
+    return new File([u8arr], fileName, { type: mime });
+  }
+
+  // Метод для показа уведомлений
+  private showNotification(type: 'success' | 'error', message: string): void {
+    if (type === 'success') {
+      alert(`✅ ${message}`);
+    } else {
+      alert(`❌ ${message}`);
     }
   }
 

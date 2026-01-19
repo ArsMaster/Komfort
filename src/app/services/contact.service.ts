@@ -1,5 +1,6 @@
+// contact.service.ts
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, filter, firstValueFrom, take } from 'rxjs';
 import { ContactInfo } from '../models/contact.model';
 import { SupabaseService } from './supabase.service';
 
@@ -7,244 +8,291 @@ import { SupabaseService } from './supabase.service';
   providedIn: 'root'
 })
 export class ContactService {
-  private contactsSubject = new BehaviorSubject<ContactInfo>(this.getDefaultContacts());
+  // Subject для хранения текущих контактов
+  private contactsSubject = new BehaviorSubject<ContactInfo>(this.getEmptyContacts());
   contacts$: Observable<ContactInfo> = this.contactsSubject.asObservable();
   
-  private storageMode: 'local' | 'supabase' = 'local';
-  private storageKey = 'komfort_contacts';
+  // Состояние загрузки
+  private loadingSubject = new BehaviorSubject<boolean>(true); // Начинаем с загрузки
+  loading$: Observable<boolean> = this.loadingSubject.asObservable();
+  
   private isInitialized = false;
+  private readonly CACHE_KEY = 'contacts_fallback_cache';
+  private cacheLoaded = false;
 
   constructor(private supabaseService: SupabaseService) {
     console.log('=== ContactService инициализирован ===');
     
-    // Экспортируем для тестирования в консоли
-    (window as any).contactService = this;
-    (window as any).contactServiceDebug = {
-      getMode: () => this.storageMode,
-      testConnection: () => this.testConnection(),
-      testAll: () => this.testAllOperations(),
-      forceLoadFromSupabase: () => this.forceLoadFromSupabase(),
-      clearCache: () => this.clearCache(),
-      addTestSocial: () => this.addTestSocial()
-    };
-    
-    this.initialize();
+    // СИНХРОННО инициализируем и сразу загружаем данные
+    this.initializeSync();
   }
 
-  private async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+  private initializeSync(): void {
+    console.log('⚡ Синхронная инициализация ContactService');
     
-    // Проверяем сохраненный режим из localStorage
-    this.storageMode = localStorage.getItem('komfort_storage_mode') as 'local' | 'supabase' || 'supabase';
+    // 1. Сразу показываем loading состояние
+    this.loadingSubject.next(true);
     
-    console.log('🔧 Режим работы ContactService:', this.storageMode);
-    
-    if (this.storageMode === 'local') {
-      this.loadFromLocalStorage();
-    } else {
-      await this.loadFromSupabase();
-    }
-    
-    this.isInitialized = true;
-    console.log('✅ ContactService инициализирован');
+    // 2. Асинхронно загружаем данные
+    this.loadFromSupabase().then(() => {
+      this.isInitialized = true;
+      console.log('✅ ContactService инициализирован');
+    }).catch(error => {
+      console.error('❌ Ошибка инициализации:', error);
+      this.isInitialized = true;
+    });
   }
 
-  // ===== ЗАГРУЗКА ИЗ LOCALSTORAGE =====
-  private loadFromLocalStorage(): void {
-    const saved = localStorage.getItem(this.storageKey);
-    if (saved) {
-      try {
-        const contacts = JSON.parse(saved);
+
+  private async loadFromCacheAsFallback(): Promise<void> {
+    console.log('🔄 Попытка загрузки из fallback кэша...');
+    
+    try {
+      const cached = localStorage.getItem(this.CACHE_KEY);
+      if (cached) {
+        const contacts = JSON.parse(cached);
+        console.log('💾 Загружено из fallback кэша');
         this.contactsSubject.next(contacts);
-        console.log('📦 Контакты загружены из localStorage');
-      } catch (error) {
-        console.error('❌ Ошибка загрузки контактов из localStorage:', error);
-        this.contactsSubject.next(this.getDefaultContacts());
-      }
-    } else {
-      console.log('📭 Нет сохраненных контактов, используются начальные');
-      const defaultContacts = this.getDefaultContacts();
-      this.contactsSubject.next(defaultContacts);
-      this.saveToLocalStorage(defaultContacts);
-    }
-  }
-
-  // ===== ЗАГРУЗКА ИЗ SUPABASE =====
-  private async loadFromSupabase(): Promise<void> {
-    console.log('🔄 Загрузка контактов из Supabase...');
-    
-    try {
-      // Сначала проверяем подключение
-      const isConnected = await this.testConnection();
-      if (!isConnected) {
-        console.warn('⚠️ Нет подключения к Supabase, переключаемся на localStorage');
-        this.storageMode = 'local';
-        this.loadFromLocalStorage();
-        return;
-      }
-      
-      const contactInfo = await this.supabaseService.getContactInfo();
-      
-      if (contactInfo) {
-        // Преобразуем ContactInfo из SupabaseService в формат ContactService
-        const transformedContacts: ContactInfo = {
-          id: contactInfo.id,
-          phone: contactInfo.phone || '',
-          email: contactInfo.email || '',
-          office: contactInfo.office || '',
-          workingHours: contactInfo.workingHours || '',
-          mapEmbed: contactInfo.mapEmbed || '',
-          social: contactInfo.social || []
-        };
-        
-        this.contactsSubject.next(transformedContacts);
-        this.saveToLocalStorage(transformedContacts);
-        console.log('✅ Контакты загружены из Supabase');
+        this.cacheLoaded = true;
       } else {
-        console.log('📭 Supabase: нет контактов, используем локальные');
-        const defaultContacts = this.getDefaultContacts();
-        this.contactsSubject.next(defaultContacts);
-        this.saveToLocalStorage(defaultContacts);
+        console.log('📭 Fallback кэш пуст');
+        // Оставляем пустые данные
       }
     } catch (error) {
-      console.error('❌ Ошибка загрузки из Supabase:', error);
-      console.log('🔄 Переключаемся на LocalStorage');
-      this.storageMode = 'local';
-      this.loadFromLocalStorage();
+      console.error('❌ Ошибка загрузки из кэша:', error);
     }
   }
 
-  // ===== СОХРАНЕНИЕ =====
-  private saveToLocalStorage(contacts?: ContactInfo): void {
-    const contactsToSave = contacts || this.getContacts();
+  /**
+   * Сохранение в кэш как fallback
+   */
+  private saveToCache(contacts: ContactInfo): void {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(contactsToSave));
-      console.log('💾 Контакты сохранены в localStorage (кэш)');
+      localStorage.setItem(this.CACHE_KEY, JSON.stringify(contacts));
+      console.log('💾 Данные сохранены в fallback кэш');
     } catch (error) {
-      console.error('❌ Ошибка сохранения в localStorage:', error);
+      console.error('❌ Ошибка сохранения в кэш:', error);
     }
   }
 
-  // ===== ПУБЛИЧНЫЕ МЕТОДЫ (сохраняем существующий интерфейс) =====
+// contact.service.ts - в методе loadFromSupabase:
+// contact.service.ts - в методе loadFromSupabase:
+private async loadFromSupabase(): Promise<void> {
+  console.log('🔄 loadFromSupabase called');
   
-  getContacts(): ContactInfo {
-    return this.contactsSubject.getValue();
+  try {
+    this.loadingSubject.next(true);
+    
+    const contactInfo = await this.supabaseService.getContactInfo();
+    
+    if (contactInfo) {
+      console.log('📦 Данные из Supabase:', contactInfo);
+      
+      // Очищаем дублированные строки
+      const transformedContacts: ContactInfo = {
+        id: contactInfo.id,
+        phone: contactInfo.phone || '',
+        email:contactInfo.email || '',
+        office: contactInfo.office || '',
+        workingHours: contactInfo.workingHours || '',
+        mapEmbed: contactInfo.mapEmbed || '',
+        social: contactInfo.social || [],
+        aboutSections: contactInfo.about_sections || [] 
+      };
+      
+      console.log('📊 Transformed contacts with aboutSections:', transformedContacts);
+      
+      // НЕМЕДЛЕННО обновляем Subject
+      this.contactsSubject.next(transformedContacts);
+      
+      // Сохраняем в кэш
+      this.saveToCache(transformedContacts);
+      
+      console.log('✅ Contacts loaded and emitted with aboutSections');
+    } else {
+      console.log('📭 No contacts in Supabase');
+    }
+  } catch (error: any) {
+    console.error('❌ Error loading from Supabase:', error);
+  } finally {
+    this.loadingSubject.next(false);
+  }
+}
+  
+
+
+
+  async getContactsAsync(): Promise<ContactInfo> {
+    // Если уже загружены, возвращаем
+    const current = this.getContacts();
+    if (current.id !== 0) {
+      return current;
+    }
+    
+    // Если загружается, ждем
+    if (this.isLoading()) {
+      return firstValueFrom(this.contacts$);
+    }
+    
+    // Если не загружены и не загружаются - загружаем
+    await this.loadFromSupabase();
+    return this.getContacts();
   }
 
-  async updateContacts(updates: Partial<ContactInfo>): Promise<void> {
-    console.log('✏️ Обновление контактов в режиме:', this.storageMode);
+  /**
+   * Основной метод обновления контактов
+   */
+  async updateContacts(updates: Partial<ContactInfo>): Promise<boolean> {
+  console.log('✏️ Обновление контактов в Supabase...');
+  
+  const currentContacts = this.getContacts();
+  const updatedContacts = { 
+    ...currentContacts, 
+    ...updates 
+  };
+  
+  try {
+    // 1. Обновляем в Supabase
+    const success = await this.supabaseService.updateContactInfo(updatedContacts);
     
-    const currentContacts = this.getContacts();
-    const updatedContacts = { ...currentContacts, ...updates };
-    
-    // Сначала обновляем локально для быстрого отклика
-    this.contactsSubject.next(updatedContacts);
-    
-    if (this.storageMode === 'local') {
-      this.saveToLocalStorage(updatedContacts);
-      console.log('✅ Контакты обновлены в LocalStorage');
+    if (success) {
+      // 2. Обновляем локальное состояние СРАЗУ
+      this.contactsSubject.next(updatedContacts);
+      
+      // 3. Сохраняем в кэш
+      this.saveToCache(updatedContacts);
+      
+      console.log('✅ Контакты успешно обновлены в Supabase и локально');
+      return true;
     } else {
-      // Обновляем в Supabase
-      try {
-        // TODO: Добавить метод updateContactInfo в SupabaseService
-        // Пока сохраняем только локально
-        this.saveToLocalStorage(updatedContacts);
-        const success = await this.supabaseService.updateContactInfo(updatedContacts);
-        if (success) {
-          this.saveToLocalStorage(updatedContacts);
-          console.log('✅ Контакты синхронизированы с Supabase');
-        } else {
-          console.warn('⚠️ Не удалось синхронизировать с Supabase, сохранено локально');
-          this.saveToLocalStorage(updatedContacts);
-        }
-      } catch (error) {
-        console.error('❌ Ошибка обновления в Supabase:', error);
-      }
+      console.warn('⚠️ Не удалось обновить контакты в Supabase');
+      return false;
     }
+  } catch (error: any) {
+    console.error('❌ Ошибка обновления в Supabase:', error);
+    return false;
+  }
+}
+
+emitCurrentContacts(): void {
+  const current = this.getContacts();
+  console.log('📤 Принудительная эмиссия текущих контактов:', current.id);
+  this.contactsSubject.next(current);
+}
+
+  
+  async refreshContacts(): Promise<void> {
+    console.log('🔄 Принудительная перезагрузка свежих данных...');
+    
+    // Очищаем кэш перед загрузкой
+    localStorage.removeItem(this.CACHE_KEY);
+    
+    this.loadingSubject.next(true);
+    await this.loadFromSupabase();
+  }
+
+  /**
+   * Проверить состояние загрузки
+   */
+  isLoading(): boolean {
+    return this.loadingSubject.getValue();
+  }
+
+  private getEmptyContacts(): ContactInfo {
+    return {
+      id: 0,
+      phone: '',
+      email: '',
+      office: '',
+      workingHours: '',
+      mapEmbed: '',
+      social: []
+    };
   }
 
   // ===== МЕТОДЫ ДЛЯ СОЦИАЛЬНЫХ СЕТЕЙ =====
-  async addSocial(social: { name: string; url: string; icon: string }): Promise<void> {
-    console.log('➕ Добавление социальной сети в режиме:', this.storageMode);
-    
-    const currentContacts = this.getContacts();
-    const updatedContacts = {
-      ...currentContacts,
-      social: [...currentContacts.social, social]
-    };
-    
-    await this.updateContacts({ social: updatedContacts.social });
-    console.log('✅ Социальная сеть добавлена');
-  }
-
-  async removeSocial(index: number): Promise<void> {
-    console.log('🗑️ Удаление социальной сети в режиме:', this.storageMode);
-    
-    const currentContacts = this.getContacts();
-    const updatedSocial = currentContacts.social.filter((_, i) => i !== index);
-    
-    await this.updateContacts({ social: updatedSocial });
-    console.log('✅ Социальная сеть удалена');
-  }
-
-  async updateSocial(index: number, updates: Partial<{ name: string; url: string; icon: string }>): Promise<void> {
-    console.log('✏️ Обновление социальной сети в режиме:', this.storageMode);
-    
-    const currentContacts = this.getContacts();
-    const updatedSocial = [...currentContacts.social];
-    
-    if (index >= 0 && index < updatedSocial.length) {
-      updatedSocial[index] = { ...updatedSocial[index], ...updates };
-      await this.updateContacts({ social: updatedSocial });
-      console.log('✅ Социальная сеть обновлена');
-    } else {
-      console.error('❌ Индекс социальной сети вне диапазона');
-    }
-  }
-
-  // ===== МЕТОДЫ ПО УМОЛЧАНИЮ =====
-  private getDefaultContacts(): ContactInfo {
-    return {
-      id: 1,
-      phone: '+7 (938) 505-00-07',
-      email: 'komfort.smm@mail.ru',
-      office: 'г. Шелковская, ул. Косая, 47, ТД "Комфорт"',
-      social: [
-        { name: 'Instagram', url: 'https://www.instagram.com/td_komfort_shelk/', icon: 'IN' },
-        { name: 'Telegram', url: 'https://t.me/komfort_company', icon: 'TG' },
-        { name: 'WhatsApp', url: 'https://wa.me/78005553535', icon: 'WA' }
-      ],
-      workingHours: 'Пн-Пт: 9:00-18:00, Сб: 10:00-16:00',
-      mapEmbed: '<iframe src="https://yandex.ru/map-widget/v1/?um=constructor%3A..." width="100%" height="100%" frameborder="0"></iframe>'
-    };
-  }
-
-  // ===== МЕТОДЫ ДЛЯ УПРАВЛЕНИЯ РЕЖИМАМИ =====
   
-  getStorageMode(): 'local' | 'supabase' {
-    return this.storageMode;
+  async addSocial(social: { name: string; url: string; icon: string }): Promise<boolean> {
+    console.log('➕ Добавление социальной сети...');
+    
+    const currentContacts = this.getContacts();
+    const updatedSocial = [...currentContacts.social, social];
+    
+    return await this.updateContacts({ social: updatedSocial });
   }
 
-  async switchStorageMode(mode: 'local' | 'supabase'): Promise<void> {
-    if (this.storageMode === mode) {
-      console.log(`ℹ️ Уже в режиме ${mode}`);
-      return;
+  async removeSocial(index: number): Promise<boolean> {
+    console.log(`🗑️ Удаление социальной сети (индекс: ${index})...`);
+    
+    const currentContacts = this.getContacts();
+    if (index < 0 || index >= currentContacts.social.length) {
+      console.error('❌ Некорректный индекс социальной сети');
+      return false;
     }
     
-    console.log(`🔄 Переключение режима с ${this.storageMode} на ${mode}`);
-    this.storageMode = mode;
-    
-    if (mode === 'local') {
-      this.loadFromLocalStorage();
-    } else {
-      await this.loadFromSupabase();
-    }
+    const updatedSocial = currentContacts.social.filter((_, i) => i !== index);
+    return await this.updateContacts({ social: updatedSocial });
   }
 
-  // ===== МЕТОДЫ ДЛЯ ТЕСТИРОВАНИЯ =====
+  async updateSocial(
+    index: number, 
+    updates: Partial<{ name: string; url: string; icon: string }>
+  ): Promise<boolean> {
+    console.log(`✏️ Обновление социальной сети (индекс: ${index})...`);
+    
+    const currentContacts = this.getContacts();
+    if (index < 0 || index >= currentContacts.social.length) {
+      console.error('❌ Некорректный индекс социальной сети');
+      return false;
+    }
+    
+    const updatedSocial = [...currentContacts.social];
+    updatedSocial[index] = { ...updatedSocial[index], ...updates };
+    
+    return await this.updateContacts({ social: updatedSocial });
+  }
+
+  getStorageMode(): string {
+    return 'supabase';
+  }
+
+  /**
+   * Переключение режима не поддерживается
+   */
+  switchStorageMode(mode: 'local' | 'supabase'): void {
+    console.warn('⚠️ Переключение режима не поддерживается. Контакты работают ТОЛЬКО с Supabase');
+  }
+
+  /**
+   * Очистка "кэша" - просто перезагружает данные
+   */
+  clearCache(): void {
+    console.log('🔄 "Очистка кэша" - перезагрузка из Supabase...');
+    this.refreshContacts();
+  }
+
+  /**
+   * Получить информацию о состоянии
+   */
+  getStatus(): { 
+    isInitialized: boolean; 
+    isLoading: boolean; 
+    hasData: boolean;
+    cacheLoaded: boolean;
+  } {
+    const contacts = this.getContacts();
+    return {
+      isInitialized: this.isInitialized,
+      isLoading: this.loadingSubject.getValue(),
+      hasData: !!(contacts.phone || contacts.email || contacts.office),
+      cacheLoaded: this.cacheLoaded
+    };
+  }
+
+  // ===== ТЕСТИРОВАНИЕ =====
   
   async testConnection(): Promise<boolean> {
-    console.log('🔌 Тестирование подключения к Supabase (Contact)...');
+    console.log('🔌 Тестирование подключения к Supabase...');
     
     try {
       const contactInfo = await this.supabaseService.getContactInfo();
@@ -256,75 +304,165 @@ export class ContactService {
     }
   }
 
-  async testAllOperations(): Promise<void> {
-    console.log('🧪 Запуск тестовых операций ContactService...');
+  // ===== МЕТОДЫ ДЛЯ АДМИН-ПАНЕЛИ =====
+  
+  /**
+   * Метод для сохранения контактов из админ-панели
+   */
+  async saveContacts(contacts: ContactInfo): Promise<boolean> {
+    console.log('💾 Сохранение контактов из админ-панели...');
+    return await this.updateContacts(contacts);
+  }
+
+  /**
+   * Проверка обновлений в Supabase
+   */
+  async checkForUpdates(): Promise<{ 
+    hasChanges: boolean; 
+    local: ContactInfo; 
+    remote: ContactInfo | null 
+  }> {
+    console.log('🔍 Проверка обновлений в Supabase...');
     
-    const connected = await this.testConnection();
-    if (!connected) {
-      console.log('❌ Тест остановлен: нет подключения');
-      return;
+    try {
+      const remoteData = await this.supabaseService.getContactInfo();
+      
+      if (!remoteData) {
+        return { 
+          hasChanges: false, 
+          local: this.getContacts(), 
+          remote: null 
+        };
+      }
+      
+      const transformedRemote: ContactInfo = {
+        id: remoteData.id,
+        phone: remoteData.phone || '',
+        email: remoteData.email || '',
+        office: remoteData.office || '',
+        workingHours: remoteData.workingHours || '',
+        mapEmbed: remoteData.mapEmbed || '',
+        social: remoteData.social || []
+      };
+      
+      const localData = this.getContacts();
+      const hasChanges = JSON.stringify(localData) !== JSON.stringify(transformedRemote);
+      
+      console.log(`📊 Результат проверки: ${hasChanges ? 'Есть изменения' : 'Нет изменений'}`);
+      
+      return {
+        hasChanges,
+        local: localData,
+        remote: transformedRemote
+      };
+    } catch (error) {
+      console.error('❌ Ошибка проверки обновлений:', error);
+      return { 
+        hasChanges: false, 
+        local: this.getContacts(), 
+        remote: null 
+      };
     }
-    
-    console.log('📦 Получаем данные...');
-    const contacts = this.getContacts();
-    console.log('- Телефон:', contacts.phone);
-    console.log('- Email:', contacts.email);
-    console.log('- Социальных сетей:', contacts.social.length);
-    
-    console.log('➕ Тест добавления социальной сети...');
-    await this.addSocial({
-      name: 'YouTube',
-      url: 'https://youtube.com/komfort',
-      icon: 'YT'
-    });
-    
-    console.log('✏️ Тест обновления социальной сети...');
-    if (contacts.social.length > 0) {
-      await this.updateSocial(0, {
-        url: 'https://vk.com/komfort_updated'
+  }
+
+  /**
+   * Синхронизация с Supabase (принудительная)
+   */
+  async syncWithSupabase(): Promise<void> {
+    console.log('🔗 Синхронизация с Supabase...');
+    await this.refreshContacts();
+  }
+
+  async ensureContactsLoaded(): Promise<ContactInfo> {
+  const current = this.getContacts();
+  
+  // Если уже загружены
+  if (current.id !== 0) {
+    return current;
+  }
+  
+  // Если загружаются, ждем
+  if (this.isLoading()) {
+    return new Promise((resolve) => {
+      const subscription = this.contacts$.subscribe(contacts => {
+        if (contacts.id !== 0) {
+          subscription.unsubscribe();
+          resolve(contacts);
+        }
       });
+    });
+  }
+  
+  // Загружаем
+  await this.loadFromSupabase();
+  return this.getContacts();
+}
+
+// В ContactService добавьте:
+private initializationPromise: Promise<void> | null = null;
+
+async initialize(): Promise<void> {
+  if (this.initializationPromise) {
+    return this.initializationPromise;
+  }
+  
+  this.initializationPromise = (async () => {
+    if (!this.isInitialized) {
+      console.log('🔄 ContactService: запуск инициализации...');
+      await this.loadFromSupabase();
+      this.isInitialized = true;
     }
-    
-    console.log('✅ Все тесты завершены');
-  }
+  })();
+  
+  return this.initializationPromise;
+}
 
-  async forceLoadFromSupabase(): Promise<void> {
-    console.log('🔄 Принудительная загрузка из Supabase...');
-    await this.loadFromSupabase();
-  }
+// Измените getContacts():
+getContacts(): ContactInfo {
+  const current = this.contactsSubject.getValue();
+  return current;
+}
 
-  clearCache(): void {
-    console.log('🧹 Очистка кэша localStorage...');
-    localStorage.removeItem(this.storageKey);
-    
-    // Восстанавливаем значения по умолчанию
-    const defaultContacts = this.getDefaultContacts();
-    this.contactsSubject.next(defaultContacts);
-    this.saveToLocalStorage(defaultContacts);
-  }
+// Добавьте метод гарантированной загрузки:
+async ensureLoaded(): Promise<ContactInfo> {
+  await this.initialize();
+  return this.getContacts();
+}
 
-  async addTestSocial(): Promise<void> {
-    console.log('➕ Добавляем тестовую социальную сеть...');
-    
-    const testSocial = {
-      name: `Test Social ${Date.now()}`,
-      url: 'https://test.example.com',
-      icon: 'TEST'
+  /**
+   * Восстановление начальных данных
+   */
+  async restoreDefaults(): Promise<void> {
+    console.log('🔄 Восстановление начальных контактов...');
+    const initialContacts: ContactInfo = {
+      id: 1,
+      phone: '+7 (938) 505-00-07',
+      email: 'komfort.smm@mail.ru',
+      office: 'г. Шелковская, ул. Косая, 47, ТД "Комфорт"',
+      social: [
+        { name: 'Instagram', url: 'https://www.instagram.com/td_komfort_shelk/', icon: 'IN' },
+        { name: 'Telegram', url: 'https://t.me/komfort_company', icon: 'TG' },
+        { name: 'WhatsApp', url: 'https://wa.me/78005553535', icon: 'WA' }
+      ],
+      workingHours: 'Пн-Пт: 9:00-18:00, Сб: 10:00-16:00',
+      mapEmbed: ''
     };
     
-    await this.addSocial(testSocial);
-    console.log('✅ Тестовая социальная сеть добавлена');
+    const success = await this.updateContacts(initialContacts);
+    
+    if (success) {
+      console.log('✅ Начальные контакты восстановлены в Supabase');
+    } else {
+      console.warn('⚠️ Не удалось восстановить начальные контакты в Supabase');
+    }
   }
 
-  // Синхронизация локальных данных с Supabase
-  async syncToSupabase(): Promise<void> {
-    console.log('🔄 Синхронизация контактов с Supabase...');
-    
-    if (this.storageMode === 'supabase') {
-      console.log('Уже в режиме Supabase, синхронизация не требуется');
-      return;
-    }
-    
-    console.log('⚠️ Синхронизация пока не реализована. Добавьте метод updateContactInfo в SupabaseService');
-  }
+  debugInfo(): any {
+  return {
+    status: this.getStatus(),
+    contacts: this.getContacts(),
+    isLoading: this.isLoading(),
+    isInitialized: this.isInitialized
+  };
+}
 }
