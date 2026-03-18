@@ -1,38 +1,39 @@
 <div class="product-card">
   <!-- Основной контейнер изображения -->
-  <div class="product-image-container">
-    <div class="product-image" (click)="openGallery()">
-      <!-- Основное изображение -->
-      <img 
-        [src]="getCurrentImageUrl()" 
-        [alt]="product.name"
-        (error)="handleImageError($event)"
-        class="main-image"
-      >
-      
-      <!-- Стрелки для переключения (если больше 1 фото) -->
-      @if (product.imageUrls && product.imageUrls.length > 1 && !showImageGallery) {
-        <div class="image-nav">
-          <button class="nav-btn prev" (click)="$event.stopPropagation(); prevImage($event)">‹</button>
-          <button class="nav-btn next" (click)="$event.stopPropagation(); nextImage($event)">›</button>
-        </div>
-        
-        <!-- Индикатор текущего изображения -->
-        <div class="image-counter">
-          {{ currentImageIndex + 1 }} / {{ product.imageUrls.length }}
-        </div>
-      }
-      
-      <div class="product-category">{{ product.categoryName || product.category }}</div>
-      <div class="product-stock" [class.low-stock]="product.stock < 3">
-        {{ product.stock }} в наличии
+  <div class="product-image" (click)="openGallery()">
+    <!-- Основное изображение -->
+    <img 
+      [src]="getCurrentImageUrl()" 
+      [alt]="product.name"
+      (error)="handleImageError($event)"
+    >
+    
+    <!-- Стрелки для переключения (если больше 1 фото) -->
+    @if (product.imageUrls && product.imageUrls.length > 1 && !showImageGallery) {
+      <div class="image-nav">
+        <button class="nav-btn prev" (click)="$event.stopPropagation(); prevImage($event)">
+          &lt; <!-- Используем HTML entity вместо символа -->
+        </button>
+        <button class="nav-btn next" (click)="$event.stopPropagation(); nextImage($event)">
+          &gt; <!-- Используем HTML entity вместо символа -->
+        </button>
       </div>
+      
+      <!-- Индикатор текущего изображения -->
+      <div class="image-counter">
+        {{ currentImageIndex + 1 }} / {{ product.imageUrls.length }}
+      </div>
+    }
+    
+    <div class="product-category">{{ product.categoryName || product.category }}</div>
+    <div class="product-stock" [class.low-stock]="product.stock < 3">
+      {{ product.stock }} в наличии
     </div>
   </div>
   
   <!-- ИНФОРМАЦИЯ О ТОВАРЕ -->
   <div class="product-info">
-    <h3 class="product-title">{{ product.name }}</h3>
+    <h3 class="product-name">{{ product.name }}</h3>
     
     <!-- Цена -->
     <div class="product-price">
@@ -42,15 +43,13 @@
     <!-- Особенности (features) -->
     @if (product.features && product.features.length > 0) {
       <div class="product-features">
-        <ul class="features-list">
+        <ul>
           @for (feature of getFirstFeatures(3); track $index) {
-            <li class="feature-item">
-              <span class="feature-icon">✓</span> {{ feature }}
-            </li>
+            <li>✓ {{ feature }}</li>
           }
         </ul>
         @if (product.features.length > 3) {
-          <div class="more-features">
+          <div style="font-size: 12px; color: #666; margin-top: 5px;">
             + ещё {{ product.features.length - 3 }} особенностей
           </div>
         }
@@ -64,25 +63,18 @@
       </p>
     }
     
-    <!-- Кнопки действий -->
-    <!-- <div class="product-actions">
-      <button class="btn-details" (click)="viewDetails()">
-        Подробнее
-      </button>
-      
-      <button class="btn-cart" 
-              [disabled]="product.stock <= 0"
-              (click)="addToCart()">
-        {{ product.stock > 0 ? 'В корзину' : 'Нет в наличии' }}
-      </button>
-    </div> -->
-    
     <!-- Админские кнопки (если нужно) -->
     @if (isAdmin) {
-      <div class="admin-actions">
+      <div class="admin-buttons">
         <button class="btn-edit" (click)="editProduct()">Редактировать</button>
         <button class="btn-delete" (click)="deleteProduct()">Удалить</button>
       </div>
+    } @else {
+      <!-- <button class="btn-buy" 
+              [disabled]="product.stock <= 0"
+              (click)="addToCart()">
+        {{ product.stock > 0 ? 'В корзину' : 'Нет в наличии' }}
+      </button> -->
     }
   </div>
   
@@ -94,30 +86,35 @@
         
         <!-- Основное изображение в галерее -->
         <div class="gallery-main">
-          <img [src]="getCurrentImageUrl()" [alt]="product.name" class="gallery-image">
+          <img [src]="getCurrentImageUrl()" [alt]="product.name">
         </div>
         
         <!-- Навигация в галерее -->
         @if (product.imageUrls && product.imageUrls.length > 1) {
           <div class="gallery-nav">
-            <button class="gallery-prev" (click)="prevImage($event)">‹</button>
-            <button class="gallery-next" (click)="nextImage($event)">›</button>
+            <button class="gallery-prev" (click)="prevImage($event)">&lt;</button>
+            <button class="gallery-next" (click)="nextImage($event)">&gt;</button>
           </div>
           
-          <!-- Миниатюры -->
-          <div class="gallery-thumbnails">
+          <!-- Миниатюры (добавьте стили) -->
+          <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
             @for (image of getGalleryImages(); track $index) {
               <img 
                 [src]="image" 
                 [alt]="'Изображение ' + ($index + 1)"
-                [class.active]="currentImageIndex === $index"
+                [style.opacity]="currentImageIndex === $index ? '1' : '0.5'"
+                [style.border]="currentImageIndex === $index ? '2px solid #ff6b6b' : 'none'"
+                [style.cursor]="'pointer'"
+                [style.width]="'50px'"
+                [style.height]="'50px'"
+                [style.object-fit]="'cover'"
                 (click)="setGalleryImage($index)"
               >
             }
           </div>
           
           <!-- Счетчик -->
-          <div class="gallery-counter">
+          <div style="color: white; text-align: center; margin-top: 10px;">
             {{ currentImageIndex + 1 }} / {{ product.imageUrls.length }}
           </div>
         }

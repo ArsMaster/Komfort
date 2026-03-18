@@ -43,42 +43,10 @@ export class ContactService {
     });
   }
 
-
-  private async loadFromCacheAsFallback(): Promise<void> {
-    console.log('🔄 Попытка загрузки из fallback кэша...');
-    
-    try {
-      const cached = localStorage.getItem(this.CACHE_KEY);
-      if (cached) {
-        const contacts = JSON.parse(cached);
-        console.log('💾 Загружено из fallback кэша');
-        this.contactsSubject.next(contacts);
-        this.cacheLoaded = true;
-      } else {
-        console.log('📭 Fallback кэш пуст');
-        // Оставляем пустые данные
-      }
-    } catch (error) {
-      console.error('❌ Ошибка загрузки из кэша:', error);
-    }
-  }
-
-  /**
-   * Сохранение в кэш как fallback
-   */
-  private saveToCache(contacts: ContactInfo): void {
-    try {
-      localStorage.setItem(this.CACHE_KEY, JSON.stringify(contacts));
-      console.log('💾 Данные сохранены в fallback кэш');
-    } catch (error) {
-      console.error('❌ Ошибка сохранения в кэш:', error);
-    }
-  }
-
 // contact.service.ts - в методе loadFromSupabase:
 // contact.service.ts - в методе loadFromSupabase:
 private async loadFromSupabase(): Promise<void> {
-  console.log('🔄 loadFromSupabase called');
+  console.log('🔄 Загрузка ТОЛЬКО из Supabase...');
   
   try {
     this.loadingSubject.next(true);
@@ -88,11 +56,10 @@ private async loadFromSupabase(): Promise<void> {
     if (contactInfo) {
       console.log('📦 Данные из Supabase:', contactInfo);
       
-      // Очищаем дублированные строки
       const transformedContacts: ContactInfo = {
         id: contactInfo.id,
         phone: contactInfo.phone || '',
-        email:contactInfo.email || '',
+        email: contactInfo.email || '',
         office: contactInfo.office || '',
         workingHours: contactInfo.workingHours || '',
         mapEmbed: contactInfo.mapEmbed || '',
@@ -100,20 +67,20 @@ private async loadFromSupabase(): Promise<void> {
         aboutSections: contactInfo.about_sections || [] 
       };
       
-      console.log('📊 Transformed contacts with aboutSections:', transformedContacts);
-      
-      // НЕМЕДЛЕННО обновляем Subject
+      // ✅ Обновляем данные
       this.contactsSubject.next(transformedContacts);
       
-      // Сохраняем в кэш
-      this.saveToCache(transformedContacts);
+      // ⚠️ ЗАКОММЕНТИРУЙТЕ сохранение в кэш!
+      // this.saveToCache(transformedContacts);
       
-      console.log('✅ Contacts loaded and emitted with aboutSections');
+      console.log('✅ Контакты загружены из Supabase');
     } else {
-      console.log('📭 No contacts in Supabase');
+      console.log('📭 Нет данных в Supabase');
+      // ⚠️ НЕ загружаем из кэша!
     }
   } catch (error: any) {
-    console.error('❌ Error loading from Supabase:', error);
+    console.error('❌ Ошибка загрузки из Supabase:', error);
+    // ⚠️ НЕ загружаем из кэша при ошибке!
   } finally {
     this.loadingSubject.next(false);
   }
@@ -156,13 +123,13 @@ private async loadFromSupabase(): Promise<void> {
     const success = await this.supabaseService.updateContactInfo(updatedContacts);
     
     if (success) {
-      // 2. Обновляем локальное состояние СРАЗУ
+      // 2. Обновляем локальное состояние
       this.contactsSubject.next(updatedContacts);
       
-      // 3. Сохраняем в кэш
-      this.saveToCache(updatedContacts);
+      // ⚠️ ЗАКОММЕНТИРУЙТЕ сохранение в кэш:
+      // this.saveToCache(updatedContacts);
       
-      console.log('✅ Контакты успешно обновлены в Supabase и локально');
+      console.log('✅ Контакты успешно обновлены в Supabase');
       return true;
     } else {
       console.warn('⚠️ Не удалось обновить контакты в Supabase');
@@ -309,10 +276,10 @@ emitCurrentContacts(): void {
   /**
    * Метод для сохранения контактов из админ-панели
    */
-  async saveContacts(contacts: ContactInfo): Promise<boolean> {
-    console.log('💾 Сохранение контактов из админ-панели...');
-    return await this.updateContacts(contacts);
-  }
+ async saveContacts(contacts: ContactInfo): Promise<boolean> {
+  console.log('💾 Сохранение контактов из админ-панели...');
+  return await this.updateContacts(contacts);
+}
 
   /**
    * Проверка обновлений в Supabase

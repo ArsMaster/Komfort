@@ -24,6 +24,7 @@
   <div class="product-form" *ngIf="showForm">
     <h2>{{ editingProduct ? 'Редактировать' : 'Добавить' }} товар</h2>
     
+    <!-- Первая строка: Название и Категория -->
     <div class="form-row">
       <div class="form-group">
         <label>Название товара *</label>
@@ -46,16 +47,16 @@
           }
         </select>
       </div>
-    </div>
-    
+    </div> <!-- ✅ Закрываем form-row -->
+
+    <!-- Вторая строка: Цена и Остаток -->
     <div class="form-row">
       <div class="form-group">
         <label>Цена (₽)</label>
         <input 
-          type="number" 
-          [(ngModel)]="currentProduct.price" 
-          min="0" 
-          step="0.01"
+          type="text" 
+          [ngModel]="currentProduct.price | number:'1.0-0'"
+          (ngModelChange)="onPriceChange($event)"
           placeholder="0">
       </div>
       
@@ -67,8 +68,9 @@
           min="0"
           placeholder="0">
       </div>
-    </div>
+    </div> <!-- ✅ Закрываем вторую form-row -->
     
+    <!-- Описание -->
     <div class="form-group">
       <label>Описание</label>
       <textarea 
@@ -134,6 +136,7 @@
       </div>
     </div>
     
+    <!-- Характеристики -->
     <div class="form-group">
       <label>Характеристики (каждая с новой строки)</label>
       <textarea 
@@ -142,6 +145,7 @@
         placeholder="Характеристика 1&#10;Характеристика 2&#10;Характеристика 3"></textarea>
     </div>
     
+    <!-- Кнопки действий -->
     <div class="form-actions">
       <button 
         (click)="saveProduct()" 
@@ -238,9 +242,9 @@
       @for (product of products(); track product.id) {
         <div class="product-item">
           <div class="product-image">
-        <img [src]="getProductImageUrl(product)" 
-            [alt]="product.name"
-            (error)="handleImageError($event, product)">
+            <img [src]="getProductImageUrl(product)" 
+                [alt]="product.name"
+                (error)="handleImageError($event, product)">
           </div>
           <div class="product-info">
             <h4>{{ product.name }}</h4>
@@ -267,4 +271,4 @@
       }
     }
   </div>
-</div>
+</div> <!-- ✅ Закрываем admin-container -->

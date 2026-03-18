@@ -226,7 +226,7 @@
   .dropdown-menu {
     position: absolute;
     top: 100%;
-    left: -50%;
+    left: -25%;
     width: 180px;
     background: white;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
@@ -543,4 +543,24 @@ a.nav-heading, a.mobile-nav-heading {
   .header-right .desktop-admin-btn {
     display: none !important;
   }
+}
+
+.catalog-item .dropdown-menu {
+  min-width: 100px; /* минимальная ширина */
+  max-width: 270px; /* максимальная ширина */
+  white-space: normal; /* разрешаем перенос текста */
+  word-wrap: break-word; /* переносим длинные слова */
+  overflow-wrap: break-word; /* современный аналог */
+  width: auto; /* автоматическая ширина */
+}
+
+.catalog-item .dropdown-item {
+  white-space: normal; /* разрешаем перенос текста */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  padding: 12px 15px !important; /* переопределяем существующие отступы */
+  line-height: 1.4; /* межстрочный интервал */
+  height: auto; /* автоматическая высота */
+  min-height: auto; /* убираем фиксированную высоту */
+  display: block; /* блочный элемент */
 }

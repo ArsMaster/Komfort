@@ -31,7 +31,6 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
   
   originalContacts: ContactInfo = { ...this.contacts };
   hasUnsavedChanges = false;
-  isSaving = false;
   saveStatus: 'idle' | 'loading' | 'success' | 'error' = 'idle';
   saveMessage = '';
   
@@ -42,6 +41,12 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
     this.contactService.contacts$
       .pipe(takeUntil(this.destroy$))
       .subscribe(contacts => {
+        // ⚠️ ВАЖНО: Игнорируем обновления во время процесса сохранения
+        if (this.saveStatus === 'loading') {
+          console.log('📬 [Пропускаем обновление во время сохранения]');
+          return;
+        }
+        
         console.log('📬 Админ получил обновленные контакты:', {
           id: contacts?.id,
           hasSocial: !!contacts?.social,
@@ -147,7 +152,8 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
   }
   
   async saveContacts(): Promise<void> {
-    if (this.isSaving) return;
+    // Если уже сохраняется - выходим
+    if (this.saveStatus === 'loading') return;
     
     // ВАЛИДАЦИЯ ПЕРЕД СОХРАНЕНИЕМ
     const validation = this.validateContacts();
@@ -155,33 +161,29 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
       this.saveStatus = 'error';
       this.saveMessage = validation.errors.join('. ');
       console.error('❌ Ошибки валидации:', validation.errors);
+      
+      // Автоматически скрываем ошибку через 5 секунд
+      setTimeout(() => {
+        this.saveStatus = 'idle';
+        this.saveMessage = '';
+        this.cdr.detectChanges();
+      }, 5000);
       return;
     }
     
     console.log('💾 Сохранение контактов в Supabase...');
     
-    // ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ ПЕРЕД СОХРАНЕНИЕМ
-    console.log('📝 Данные для сохранения:', {
-      phone: this.contacts.phone,
-      email: this.contacts.email,
-      office: this.contacts.office,
-      workingHours: this.contacts.workingHours,
-      mapEmbed: this.contacts.mapEmbed,
-      social: this.contacts.social,
-      socialCount: this.contacts.social?.length || 0,
-      aboutSections: this.contacts.aboutSections,
-      aboutSectionsCount: this.contacts.aboutSections?.length || 0
-    });
-    
-    this.isSaving = true;
+    // Устанавливаем статус загрузки
     this.saveStatus = 'loading';
     this.saveMessage = 'Сохранение контактов...';
+    
+    // Принудительно обновляем view
+    this.cdr.detectChanges();
     
     try {
       // 1. ПОДГОТОВКА ДАННЫХ ДЛЯ СОХРАНЕНИЯ
       const contactsToSave = {
         ...this.contacts,
-        // ГАРАНТИРУЕМ, ЧТО SOCIAL ВСЕГДА МАССИВ
         social: Array.isArray(this.contacts.social) 
           ? this.contacts.social.filter(s => s && typeof s === 'object')
           : []
@@ -189,9 +191,6 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
       
       // 2. ПРОВЕРЯЕМ SOCIAL ПЕРЕД СОХРАНЕНИЕМ
       if (!contactsToSave.social || contactsToSave.social.length === 0) {
-        console.warn('⚠️ ВНИМАНИЕ: Social сети пустые или отсутствуют!');
-        
-        // Запрашиваем подтверждение если social пустые
         const shouldProceed = confirm(
           'Социальные сети пустые. Это удалит все существующие социальные сети из базы данных.\n\n' +
           'Продолжить сохранение?'
@@ -201,7 +200,7 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
           console.log('❌ Сохранение отменено пользователем');
           this.saveStatus = 'idle';
           this.saveMessage = '';
-          this.isSaving = false;
+          this.cdr.detectChanges();
           return;
         }
       }
@@ -218,86 +217,38 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
         this.saveStatus = 'success';
         this.saveMessage = 'Контакты успешно сохранены в Supabase!';
         
-        // 4. ПРОВЕРЯЕМ, ЧТО SOCIAL СОХРАНИЛИСЬ
-        setTimeout(async () => {
-          try {
-            const updatedContacts = this.contactService.getContacts();
-            console.log('🔍 Проверка сохраненных данных:', {
-              savedSocialCount: updatedContacts.social?.length || 0,
-              savedSocial: updatedContacts.social
-            });
-            
-            if (updatedContacts.social && updatedContacts.social.length === 0) {
-              console.warn('⚠️ ВНИМАНИЕ: Social сети не сохранились!');
-              this.saveMessage = 'Контакты сохранены, но социальные сети могут быть потеряны';
-              this.cdr.detectChanges();
-            }
-          } catch (error) {
-            console.error('❌ Ошибка проверки сохраненных данных:', error);
-          }
-        }, 1000);
-        
-        // 5. ОБНОВЛЯЕМ ОРИГИНАЛЬНЫЕ ДАННЫЕ
+        // 4. ОБНОВЛЯЕМ ОРИГИНАЛЬНЫЕ ДАННЫЕ
         this.originalContacts = { ...this.contacts };
         this.hasUnsavedChanges = false;
         
         console.log('✅ Контакты сохранены в Supabase');
-        console.log('📞 Телефон:', this.contacts.phone);
-        console.log('📧 Email:', this.contacts.email);
-        console.log('🏢 Офис:', this.contacts.office);
-        console.log('📱 Социальные сети:', this.contacts.social?.length || 0, 'шт.');
         
-        // 6. СКРЫВАЕМ СООБЩЕНИЕ ЧЕРЕЗ 3 СЕКУНДЫ
+        // 5. СКРЫВАЕМ СООБЩЕНИЕ ЧЕРЕЗ 3 СЕКУНДЫ
         setTimeout(() => {
-          if (this.saveStatus === 'success') {
-            this.saveStatus = 'idle';
-            this.saveMessage = '';
-          }
-        }, 3000);
-        
-      } else {
-        this.saveStatus = 'error';
-        this.saveMessage = 'Ошибка: не удалось сохранить контакты в Supabase';
-        console.error('❌ Ошибка сохранения в Supabase');
-        
-        // 7. ВОССТАНАВЛИВАЕМ ДАННЫЕ ИЗ ОРИГИНАЛА
-        this.contacts = { ...this.originalContacts };
-        
-        // 8. СООБЩАЕМ ОБ ОШИБКЕ БОЛЬШЕ ИНФОРМАЦИИ
-        setTimeout(async () => {
-          try {
-            // Проверяем текущие данные в Supabase
-            const supabaseData = await this.supabaseService.getContactInfo();
-            console.error('🔍 Текущие данные в Supabase:', {
-              hasSocial: !!supabaseData?.social,
-              socialCount: supabaseData?.social?.length || 0
-            });
-          } catch (error) {
-            console.error('❌ Ошибка проверки данных Supabase:', error);
-          }
-        }, 500);
-      }
-      
-    } catch (error: any) {
-      console.error('❌ Неожиданная ошибка при сохранении:', error);
-      this.saveStatus = 'error';
-      this.saveMessage = `Ошибка: ${error.message || 'Неизвестная ошибка'}`;
-      
-      // Восстанавливаем данные при ошибке
-      this.contacts = { ...this.originalContacts };
-      
-    } finally {
-      this.isSaving = false;
-      
-      // 9. ГАРАНТИРОВАННЫЙ СБРОС СТАТУСА ЧЕРЕЗ 5 СЕКУНД
-      setTimeout(() => {
-        if (this.saveStatus !== 'idle') {
-          console.log('🔄 Автоматический сброс статуса сохранения');
           this.saveStatus = 'idle';
           this.saveMessage = '';
           this.cdr.detectChanges();
-        }
+        }, 3000);
+        
+      } else {
+        throw new Error('Не удалось сохранить контакты в Supabase');
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Ошибка сохранения:', error);
+      this.saveStatus = 'error';
+      this.saveMessage = `Ошибка: ${error.message || 'Не удалось сохранить контакты'}`;
+      
+      // Восстанавливаем данные из оригинала
+      this.contacts = { ...this.originalContacts };
+      
+      // Автоматически скрываем ошибку через 5 секунд
+      setTimeout(() => {
+        this.saveStatus = 'idle';
+        this.saveMessage = '';
+        this.cdr.detectChanges();
       }, 5000);
+      
     }
   }
   
@@ -313,25 +264,26 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
     // 2. Устанавливаем статус загрузки
     this.saveStatus = 'loading';
     this.saveMessage = 'Восстановление социальных сетей...';
+    this.cdr.detectChanges();
     
     try {
       // 3. Создаем дефолтные социальные сети
       const defaultSocials = [
-              {
-            name: 'Instagram',
-            url: 'https://www.instagram.com/td_komfort_shelk/',
-            icon: 'IN'
-          },
-          {
-            name: 'Telegram',
-            url: 'https://t.me/KOMFORTTD',
-            icon: 'TG'
-          },
-          {
-            name: 'WhatsApp',
-            url: 'https://wa.me/79280001193',
-            icon: 'WA'
-          } 
+        {
+          name: 'Instagram',
+          url: 'https://www.instagram.com/td_komfort_shelk/',
+          icon: 'IN'
+        },
+        {
+          name: 'Telegram',
+          url: 'https://t.me/KOMFORTTD',
+          icon: 'TG'
+        },
+        {
+          name: 'WhatsApp',
+          url: 'https://wa.me/79280001193',
+          icon: 'WA'
+        } 
       ];
       
       console.log('📱 Дефолтные социальные сети:', defaultSocials);
@@ -416,21 +368,21 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
   // Метод для добавления социальных сетей без немедленного сохранения
   addDefaultSocialNetworks(): void {
     const defaultSocials = [
-          {
-          name: 'Instagram',
-          url: 'https://www.instagram.com/td_komfort_shelk/',
-          icon: 'IN'
-        },
-        {
-          name: 'Telegram',
-          url: 'https://t.me/KOMFORTTD',
-          icon: 'TG'
-        },
-        {
-          name: 'WhatsApp',
-          url: 'https://wa.me/79280001193',
-          icon: 'WA'
-        }
+      {
+        name: 'Instagram',
+        url: 'https://www.instagram.com/td_komfort_shelk/',
+        icon: 'IN'
+      },
+      {
+        name: 'Telegram',
+        url: 'https://t.me/KOMFORTTD',
+        icon: 'TG'
+      },
+      {
+        name: 'WhatsApp',
+        url: 'https://wa.me/79280001193',
+        icon: 'WA'
+      }
     ];
     
     // Если social уже есть, добавляем только отсутствующие
@@ -472,6 +424,7 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
     
     this.saveStatus = 'loading';
     this.saveMessage = 'Перезапись социальных сетей...';
+    this.cdr.detectChanges();
     
     try {
       // Получаем текущие контакты
@@ -481,7 +434,7 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
       const updatedContacts = {
         ...currentContacts,
         social: [
-                {
+          {
             name: 'Instagram',
             url: 'https://www.instagram.com/td_komfort_shelk/',
             icon: 'IN'
@@ -549,6 +502,7 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
     });
     
     this.hasUnsavedChanges = true;
+    this.cdr.detectChanges();
   }
   
   // Метод для удаления социальной сети
@@ -556,70 +510,70 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
     if (this.contacts.social && index >= 0 && index < this.contacts.social.length) {
       this.contacts.social.splice(index, 1);
       this.hasUnsavedChanges = true;
+      this.cdr.detectChanges();
     }
   }
 
   socialTrackBy(index: number, social: any): string {
-  // Используем комбинацию индекса и URL для уникального ключа
-  return `${index}-${social.url || 'new'}-${social.name || 'unnamed'}`;
-}
+    // Используем комбинацию индекса и URL для уникального ключа
+    return `${index}-${social.url || 'new'}-${social.name || 'unnamed'}`;
+  }
 
-// Добавьте этот метод для отмены изменений
-cancelChanges(): void {
-  if (this.hasUnsavedChanges) {
-    const confirmCancel = confirm(
-      'У вас есть несохраненные изменения. Вы уверены, что хотите отменить?\n\n' +
-      'Все изменения будут потеряны.'
-    );
+  // Добавьте этот метод для отмены изменений
+  cancelChanges(): void {
+    if (this.hasUnsavedChanges) {
+      const confirmCancel = confirm(
+        'У вас есть несохраненные изменения. Вы уверены, что хотите отменить?\n\n' +
+        'Все изменения будут потеряны.'
+      );
+      
+      if (!confirmCancel) {
+        return;
+      }
+    }
     
-    if (!confirmCancel) {
+    // Восстанавливаем данные из оригинала
+    this.contacts = { ...this.originalContacts };
+    this.hasUnsavedChanges = false;
+    this.saveStatus = 'idle';
+    this.saveMessage = '';
+    
+    console.log('🔄 Изменения отменены, данные восстановлены');
+  }
+
+  // Добавьте этот метод для полного сброса
+  resetForm(): void {
+    if (!confirm('Сбросить форму к значениям из базы данных?')) {
       return;
     }
+    
+    // Загружаем свежие данные из сервиса
+    const freshContacts = this.contactService.getContacts();
+    this.contacts = { ...freshContacts };
+    this.originalContacts = { ...freshContacts };
+    this.hasUnsavedChanges = false;
+    this.saveStatus = 'idle';
+    this.saveMessage = '';
+    
+    console.log('🔄 Форма сброшена к данным из базы');
   }
-  
-  // Восстанавливаем данные из оригинала
-  this.contacts = { ...this.originalContacts };
-  this.hasUnsavedChanges = false;
-  this.saveStatus = 'idle';
-  this.saveMessage = '';
-  
-  console.log('🔄 Изменения отменены, данные восстановлены');
-}
 
-// Добавьте этот метод для полного сброса
-resetForm(): void {
-  if (!confirm('Сбросить форму к значениям из базы данных?')) {
-    return;
+  // Добавьте этот метод для отслеживания изменений
+  onFieldChange(): void {
+    // Сравниваем текущие данные с оригинальными
+    const hasChanges = 
+      this.contacts.phone !== this.originalContacts.phone ||
+      this.contacts.email !== this.originalContacts.email ||
+      this.contacts.office !== this.originalContacts.office ||
+      this.contacts.workingHours !== this.originalContacts.workingHours ||
+      this.contacts.mapEmbed !== this.originalContacts.mapEmbed ||
+      JSON.stringify(this.contacts.social) !== JSON.stringify(this.originalContacts.social) ||
+      JSON.stringify(this.contacts.aboutSections) !== JSON.stringify(this.originalContacts.aboutSections);
+    
+    this.hasUnsavedChanges = hasChanges;
+    
+    if (hasChanges) {
+      console.log('📝 Обнаружены несохраненные изменения');
+    }
   }
-  
-  // Загружаем свежие данные из сервиса
-  const freshContacts = this.contactService.getContacts();
-  this.contacts = { ...freshContacts };
-  this.originalContacts = { ...freshContacts };
-  this.hasUnsavedChanges = false;
-  this.saveStatus = 'idle';
-  this.saveMessage = '';
-  
-  console.log('🔄 Форма сброшена к данным из базы');
-}
-
-// Добавьте этот метод для отслеживания изменений
-onFieldChange(): void {
-  // Сравниваем текущие данные с оригинальными
-  const hasChanges = 
-    this.contacts.phone !== this.originalContacts.phone ||
-    this.contacts.email !== this.originalContacts.email ||
-    this.contacts.office !== this.originalContacts.office ||
-    this.contacts.workingHours !== this.originalContacts.workingHours ||
-    this.contacts.mapEmbed !== this.originalContacts.mapEmbed ||
-    JSON.stringify(this.contacts.social) !== JSON.stringify(this.originalContacts.social) ||
-    JSON.stringify(this.contacts.aboutSections) !== JSON.stringify(this.originalContacts.aboutSections);
-  
-  this.hasUnsavedChanges = hasChanges;
-  
-  if (hasChanges) {
-    console.log('📝 Обнаружены несохраненные изменения');
-  }
-}
-
 }

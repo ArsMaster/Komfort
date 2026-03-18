@@ -202,116 +202,159 @@ handleImageError(event: any, product: Product): void {
     this.imageUrlsText = '';
   }
 
-  editProduct(product: Product): void {
-    this.currentProduct = { ...product };
-    this.editingProduct = true;
-    this.showForm = true;
-    this.clearSelectedFiles();
-    
-    // Загружаем существующие изображения товара
-    this.uploadedImageUrls = [...(product.imageUrls || [])];
-    this.updateTextFromImageUrls();
-  }
+ editProduct(product: Product): void {
+  // Создаем копию, но БЕЗ categoryName
+  const { categoryName, ...productWithoutCategoryName } = product;
+  
+  this.currentProduct = { 
+    ...productWithoutCategoryName,
+    // Убедимся, что categoryId правильного типа
+    categoryId: product.categoryId
+  };
+  
+  this.editingProduct = true;
+  this.showForm = true;
+  this.clearSelectedFiles();
+  
+  // Загружаем существующие изображения товара
+  this.uploadedImageUrls = [...(product.imageUrls || [])];
+  this.updateTextFromImageUrls();
+  
+  console.log('Редактирование товара (без categoryName):', this.currentProduct);
+}
 
   async saveProduct(): Promise<void> {
-    console.log('=== СОХРАНЕНИЕ ТОВАРА ===');
-    
-    // Валидация
-    if (!this.currentProduct.name?.trim()) {
-      alert('Пожалуйста, укажите название товара');
-      return;
-    }
-    
-    if (!this.currentProduct.categoryId) {
-      alert('Пожалуйста, выберите категорию');
-      return;
-    }
-    
-    // Обновляем URL из текстового поля
-    this.updateImageUrlsFromText();
-    
-    try {
-      let finalImageUrls: string[] = [];
-      
-      // 1. Если есть выбранные файлы, загружаем их в Supabase Storage
-      if (this.selectedFiles.length > 0) {
-        this.isUploadingImages.set(true);
-        try {
-          console.log(`📤 Загрузка ${this.selectedFiles.length} изображений...`);
-          const uploadedUrls = await this.productService.uploadProductImages(this.selectedFiles);
-          finalImageUrls = [...this.uploadedImageUrls, ...uploadedUrls];
-          console.log('✅ Изображения загружены:', uploadedUrls);
-        } finally {
-          this.isUploadingImages.set(false);
-        }
-      } else {
-        // Используем существующие URL
-        finalImageUrls = this.uploadedImageUrls;
-      }
-      
-      // Если нет изображений, используем дефолтное
-      if (finalImageUrls.length === 0) {
-        finalImageUrls = ['/assets/default-product.jpg'];
-      }
-      
-      // 2. Получаем информацию о категории
-      const selectedCategory = this.categories().find(c => c.id === this.currentProduct.categoryId);
-      const categoryName = selectedCategory?.title || 'Без категории';
-      
-      // 3. Подготавливаем features
-      let features: string[] = [];
-      if (typeof this.currentProduct.features === 'string') {
-        features = (this.currentProduct.features as string)
-          .split('\n')
-          .map(f => f.trim())
-          .filter(f => f.length > 0);
-      } else if (Array.isArray(this.currentProduct.features)) {
-        features = this.currentProduct.features;
-      }
-      
-      // 4. Создаем объект товара
-      const productData: Omit<Product, 'id'> = {
-        name: this.currentProduct.name!,
-        description: this.currentProduct.description || '',
-        price: this.currentProduct.price || 0,
-        categoryId: this.currentProduct.categoryId,
-        categoryName: categoryName,
-        imageUrls: finalImageUrls,
-        stock: this.currentProduct.stock || 0,
-        features: features,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      console.log('📦 Данные для сохранения:', productData);
-      
-      if (this.editingProduct && this.currentProduct.id) {
-        // Обновление существующего товара
-        await this.productService.updateProduct(
-          this.currentProduct.id,
-          productData,
-          this.selectedFiles.length > 0 ? this.selectedFiles : undefined
-        );
-        alert(`Товар "${productData.name}" успешно обновлен!`);
-      } else {
-        // Создание нового товара
-        const newProduct = await this.productService.addProduct(
-          productData,
-          this.selectedFiles.length > 0 ? this.selectedFiles : undefined
-        );
-        console.log('✅ Новый товар создан:', newProduct);
-        alert(`Товар "${newProduct.name}" успешно добавлен!`);
-      }
-      
-      // Обновляем UI
-      await this.loadProducts();
-      this.cancelEdit();
-      
-    } catch (error: any) {
-      console.error('❌ Ошибка при сохранении товара:', error);
-      alert('Произошла ошибка при сохранении товара: ' + error.message);
-    }
+  console.log('=== СОХРАНЕНИЕ ТОВАРА ===');
+  
+  // Валидация
+  if (!this.currentProduct.name?.trim()) {
+    alert('Пожалуйста, укажите название товара');
+    return;
   }
+  
+  if (!this.currentProduct.categoryId) {
+    alert('Пожалуйста, выберите категорию');
+    return;
+  }
+  
+  // Обновляем URL из текстового поля
+  this.updateImageUrlsFromText();
+  
+  try {
+    let finalImageUrls: string[] = [];
+    
+    // 1. Если есть выбранные файлы, загружаем их в Supabase Storage
+    if (this.selectedFiles.length > 0) {
+      this.isUploadingImages.set(true);
+      try {
+        console.log(`📤 Загрузка ${this.selectedFiles.length} изображений...`);
+        const uploadedUrls = await this.productService.uploadProductImages(this.selectedFiles);
+        finalImageUrls = [...this.uploadedImageUrls, ...uploadedUrls];
+        console.log('✅ Изображения загружены:', uploadedUrls);
+      } finally {
+        this.isUploadingImages.set(false);
+      }
+    } else {
+      // Используем существующие URL
+      finalImageUrls = this.uploadedImageUrls;
+    }
+    
+    // Если нет изображений, используем дефолтное
+    if (finalImageUrls.length === 0) {
+      finalImageUrls = ['/assets/default-product.jpg'];
+    }
+    
+    // 2. Получаем информацию о категории
+    const categoryId = Number(this.currentProduct.categoryId);
+    const selectedCategory = this.categories().find(c => c.id === categoryId);
+    const categoryName = selectedCategory?.title || 'Без категории';
+    
+    console.log('✅ Найдена категория:', selectedCategory);
+    console.log('✅ Устанавливаем categoryName:', categoryName);
+    
+    // 3. Подготавливаем features
+    let features: string[] = [];
+    if (typeof this.currentProduct.features === 'string') {
+      features = (this.currentProduct.features as string)
+        .split('\n')
+        .map(f => f.trim())
+        .filter(f => f.length > 0);
+    } else if (Array.isArray(this.currentProduct.features)) {
+      features = this.currentProduct.features;
+    }
+    
+    // 4. Парсим цену
+    const price = this.parsePrice(this.currentProduct.price);
+    
+    // 5. Создаем объект товара - ЯВНО указываем все поля
+    const productData: Omit<Product, 'id'> = {
+      name: this.currentProduct.name!,
+      description: this.currentProduct.description || '',
+      price: price,
+      categoryId: categoryId,
+      categoryName: categoryName, // Явно устанавливаем из найденной категории
+      imageUrls: finalImageUrls,
+      stock: Number(this.currentProduct.stock) || 0,
+      features: features,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    console.log('📦 Данные для сохранения:', productData);
+    
+    if (this.editingProduct && this.currentProduct.id) {
+      // Обновление существующего товара
+      await this.productService.updateProduct(
+        this.currentProduct.id,
+        productData,
+        this.selectedFiles.length > 0 ? this.selectedFiles : undefined
+      );
+      alert(`Товар "${productData.name}" успешно обновлен!`);
+    } else {
+      // Создание нового товара
+      const newProduct = await this.productService.addProduct(
+        productData,
+        this.selectedFiles.length > 0 ? this.selectedFiles : undefined
+      );
+      console.log('✅ Новый товар создан:', newProduct);
+      alert(`Товар "${newProduct.name}" успешно добавлен!`);
+    }
+    
+    // Обновляем UI
+    await this.loadProducts();
+    this.cancelEdit();
+    
+  } catch (error: any) {
+    console.error('❌ Ошибка при сохранении товара:', error);
+    alert('Произошла ошибка при сохранении товара: ' + error.message);
+  }
+}
+
+// Добавьте этот метод
+parsePrice(price: any): number {
+  if (price === null || price === undefined || price === '') {
+    return 0;
+  }
+  
+  // Если это строка, очищаем от пробелов и заменяем запятую на точку
+  if (typeof price === 'string') {
+    // Удаляем все пробелы и заменяем запятую на точку
+    const cleanedPrice = price.replace(/\s/g, '').replace(',', '.');
+    const parsed = parseFloat(cleanedPrice);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  
+  // Если это число, просто возвращаем
+  return Number(price) || 0;
+}
+
+    onPriceChange(value: string): void {
+    // Удаляем все кроме цифр и точки
+    const cleaned = value.replace(/[^\d.]/g, '');
+    // Парсим как число
+    const parsed = parseFloat(cleaned);
+    this.currentProduct.price = isNaN(parsed) ? 0 : parsed;
+}
 
   cancelEdit(): void {
     this.showForm = false;

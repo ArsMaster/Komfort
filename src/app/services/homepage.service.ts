@@ -68,11 +68,11 @@ export class HomePageService {
         console.log('✅ Настройки загружены из localStorage');
       } catch (error) {
         console.error('❌ Ошибка загрузки настроек:', error);
-        this.settingsSubject.next(this.getDefaultSettings());
+        // this.settingsSubject.next(this.getDefaultSettings());
       }
     } else {
       console.log('📭 Нет сохраненных настроек, используются начальные');
-      this.settingsSubject.next(this.getDefaultSettings());
+      // this.settingsSubject.next(this.getDefaultSettings());
     }
     
     // Загрузка слайдов
@@ -100,11 +100,11 @@ export class HomePageService {
         console.log('✅ Информация о компании загружена из localStorage');
       } catch (error) {
         console.error('❌ Ошибка загрузки информации о компании:', error);
-        this.companyInfoSubject.next(this.getDefaultCompanyInfo());
+        // this.companyInfoSubject.next(this.getDefaultCompanyInfo());
       }
     } else {
       console.log('📭 Нет сохраненной информации о компании, используются начальные');
-      this.companyInfoSubject.next(this.getDefaultCompanyInfo());
+      // this.companyInfoSubject.next(this.getDefaultCompanyInfo());
     }
   }
 
@@ -117,22 +117,23 @@ export class HomePageService {
     const isConnected = await this.testConnection();
     if (!isConnected) {
       console.warn('⚠️ Нет подключения к Supabase, переключаемся на localStorage');
-      this.storageMode = 'local';
-      this.loadFromLocalStorage();
-      return;
+      // this.storageMode = 'local';
+      // this.loadFromLocalStorage();
+      console.error('❌ Нет интернета, данные не загружены');
+  return;
     }
     
     // Загрузка настроек главной страницы
     const settings = await this.supabaseService.getHomepageSettings();
     if (settings) {
       this.settingsSubject.next(settings);
-      this.saveToLocalStorage(this.SETTINGS_KEY, settings);
+      // this.saveToLocalStorage(this.SETTINGS_KEY, settings);
       console.log('✅ Настройки загружены из Supabase');
     } else {
       console.log('📭 Supabase: нет настроек, используем локальные');
-      const defaultSettings = this.getDefaultSettings();
-      this.settingsSubject.next(defaultSettings);
-      this.saveToLocalStorage(this.SETTINGS_KEY, defaultSettings);
+      // const defaultSettings = this.getDefaultSettings();
+      // this.settingsSubject.next(defaultSettings);
+      // this.saveToLocalStorage(this.SETTINGS_KEY, defaultSettings);
     }
     
     // Загрузка слайдов
@@ -141,7 +142,7 @@ export class HomePageService {
       const fixedSlides = this.cleanSlideImageUrls(slides);
       
       this.slidesSubject.next(fixedSlides);
-      this.saveToLocalStorage(this.SLIDES_KEY, fixedSlides);
+      // this.saveToLocalStorage(this.SLIDES_KEY, fixedSlides);
       console.log('✅ Слайды загружены из Supabase:', fixedSlides.length);
       
       console.log('📊 Слайды после исправления путей:');
@@ -150,10 +151,10 @@ export class HomePageService {
       });
     } else {
       console.log('📭 Supabase: нет слайдов, используем локальные');
-      const defaultSlides = this.getDefaultSlides();
-      const cleanedDefaultSlides = this.cleanSlideImageUrls(defaultSlides);
-      this.slidesSubject.next(cleanedDefaultSlides);
-      this.saveToLocalStorage(this.SLIDES_KEY, cleanedDefaultSlides);
+      // const defaultSlides = this.getDefaultSlides();
+      // const cleanedDefaultSlides = this.cleanSlideImageUrls(defaultSlides);
+      // this.slidesSubject.next(cleanedDefaultSlides);
+      // this.saveToLocalStorage(this.SLIDES_KEY, cleanedDefaultSlides);
     }
     
     // Загрузка информации о компании
@@ -240,20 +241,21 @@ export class HomePageService {
       });
       
       this.companyInfoSubject.next(transformedCompanyInfo);
-      this.saveToLocalStorage(this.COMPANY_KEY, transformedCompanyInfo);
+      // this.saveToLocalStorage(this.COMPANY_KEY, transformedCompanyInfo);
       console.log('✅ Информация о компании загружена из Supabase с aboutSections');
     } else {
       console.log('📭 Supabase: нет информации о компании, используем локальную');
-      const defaultCompanyInfo = this.getDefaultCompanyInfo();
-      this.companyInfoSubject.next(defaultCompanyInfo);
-      this.saveToLocalStorage(this.COMPANY_KEY, defaultCompanyInfo);
+      // const defaultCompanyInfo = this.getDefaultCompanyInfo();
+      // this.companyInfoSubject.next(defaultCompanyInfo);
+      // this.saveToLocalStorage(this.COMPANY_KEY, defaultCompanyInfo);
     }
     
   } catch (error) {
     console.error('❌ Ошибка загрузки из Supabase:', error);
-    console.log('🔄 Переключаемся на LocalStorage');
-    this.storageMode = 'local';
-    this.loadFromLocalStorage();
+    // console.log('🔄 Переключаемся на LocalStorage');
+    // this.storageMode = 'local';
+    // this.loadFromLocalStorage();
+    console.log('⚠️ Ошибка загрузки, данные не обновлены');
   }
 }
 
@@ -287,7 +289,7 @@ export class HomePageService {
   
   if (this.storageMode === 'local') {
     this.settingsSubject.next(settings);
-    this.saveToLocalStorage(this.SETTINGS_KEY, settings);
+    // this.saveToLocalStorage(this.SETTINGS_KEY, settings);
     console.log('✅ Настройки обновлены в LocalStorage');
   } else {
     try {
@@ -574,13 +576,13 @@ async uploadSlideImage(file: File): Promise<string> {
     localStorage.removeItem(this.COMPANY_KEY);
     
     // Восстанавливаем значения по умолчанию
-    this.settingsSubject.next(this.getDefaultSettings());
-    this.slidesSubject.next(this.getDefaultSlides());
-    this.companyInfoSubject.next(this.getDefaultCompanyInfo());
+    // this.settingsSubject.next(this.getDefaultSettings());
+    // this.slidesSubject.next(this.getDefaultSlides());
+    // this.companyInfoSubject.next(this.getDefaultCompanyInfo());
     
-    this.saveToLocalStorage(this.SETTINGS_KEY, this.getDefaultSettings());
-    this.saveToLocalStorage(this.SLIDES_KEY, this.getDefaultSlides());
-    this.saveToLocalStorage(this.COMPANY_KEY, this.getDefaultCompanyInfo());
+    // this.saveToLocalStorage(this.SETTINGS_KEY, this.getDefaultSettings());
+    // this.saveToLocalStorage(this.SLIDES_KEY, this.getDefaultSlides());
+    // this.saveToLocalStorage(this.COMPANY_KEY, this.getDefaultCompanyInfo());
   }
 
   async initializeHomepageData(): Promise<void> {

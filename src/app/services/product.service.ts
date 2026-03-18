@@ -614,80 +614,77 @@ export class ProductService {
    * Добавляет новый товар с возможностью загрузки изображений
    */
   async addProduct(
-    productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>,
-    imageFiles?: File[]
-  ): Promise<Product> {
-    console.log('➕ Добавление нового товара в режиме:', this.storageMode());
+  productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>,
+  imageFiles?: File[]
+): Promise<Product> {
+  console.log('➕ Добавление нового товара в режиме:', this.storageMode());
+  
+  let imageUrls: string[] = [];
+  
+  try {
+    // 1. Загружаем изображения со сжатием если есть
+    if (imageFiles && imageFiles.length > 0) {
+      console.log(`📤 Загружаем ${imageFiles.length} изображений со сжатием...`);
+      imageUrls = await this.uploadProductImages(imageFiles);
+    } else {
+      // Используем очищенные URL из productData или дефолтные
+      imageUrls = this.cleanImageUrls(productData.imageUrls || []);
+    }
     
-    let imageUrls: string[] = [];
+    // 2. Подготавливаем данные для Supabase - строго по новому типу!
+    const productForDb = {
+      name: productData.name,
+      description: productData.description || '',
+      price: Number(productData.price) || 0, // Принудительно в число
+      categoryId: Number(productData.categoryId), // Принудительно в число
+      imageUrls: imageUrls,
+      stock: Number(productData.stock) || 0,
+      features: Array.isArray(productData.features) ? productData.features : []
+    };
     
-    try {
-      // 1. Загружаем изображения со сжатием если есть
-      if (imageFiles && imageFiles.length > 0) {
-        console.log(`📤 Загружаем ${imageFiles.length} изображений со сжатием...`);
-        imageUrls = await this.uploadProductImages(imageFiles);
-      } else {
-        // Используем очищенные URL из productData или дефолтные
-        imageUrls = this.cleanImageUrls(productData.imageUrls || []);
-      }
-      
+    console.log('📤 Отправка в SupabaseService:', productForDb);
+    
+    if (this.storageMode() === 'local') {
+      // Локальное сохранение
       const newProduct: Product = {
-        ...productData,
+        ...productForDb,
         id: this.generateId(),
-        imageUrls: imageUrls,
+        categoryName: productData.categoryName || 'Без категории', // Для локального режима
         createdAt: new Date(),
         updatedAt: new Date()
       };
       
-      if (this.storageMode() === 'local') {
-        // Локальное сохранение
-        this.products.update(products => [...products, newProduct]);
-        console.log('✅ Товар добавлен в localStorage:', newProduct.name);
-        return newProduct;
+      this.products.update(products => [...products, newProduct]);
+      console.log('✅ Товар добавлен в localStorage:', newProduct.name);
+      return newProduct;
+    } else {
+      // Сохранение в Supabase - вызываем с правильными параметрами
+      const result = await this.supabaseService.addProduct(productForDb);
+      
+      if (result) {
+        // Обновляем локальный список
+        this.products.update(products => [...products, result]);
+        console.log('✅ Товар добавлен в Supabase:', result);
+        return result;
       } else {
-        // Сохранение в Supabase
-        const supabaseProduct = {
-          name: newProduct.name,
-          description: newProduct.description,
-          price: newProduct.price,
-          categoryId: newProduct.categoryId,
-          categoryName: newProduct.categoryName,
-          imageUrls: newProduct.imageUrls,
-          stock: newProduct.stock,
-          features: newProduct.features
-        };
-        
-        const result = await this.supabaseService.addProduct(supabaseProduct);
-        
-        if (result) {
-          // Обновляем локальный список
-          const finalProduct = {
-            ...newProduct,
-            id: result.id
-          };
-          
-          this.products.update(products => [...products, finalProduct]);
-          console.log('✅ Товар добавлен в Supabase:', finalProduct.name);
-          return finalProduct;
-        } else {
-          throw new Error('Не удалось сохранить в Supabase');
-        }
+        throw new Error('Не удалось сохранить в Supabase');
       }
-    } catch (error) {
-      console.error('❌ Ошибка добавления товара:', error);
-      
-      // Если ошибка при загрузке изображений, удаляем их
-      if (imageUrls.length > 0 && imageUrls.some(url => this.isSupabaseStorageUrl(url))) {
-        try {
-          await this.deleteProductImages(imageUrls);
-        } catch (deleteError) {
-          console.error('❌ Ошибка удаления загруженных изображений:', deleteError);
-        }
-      }
-      
-      throw error;
     }
+  } catch (error) {
+    console.error('❌ Ошибка добавления товара:', error);
+    
+    // Если ошибка при загрузке изображений, удаляем их
+    if (imageUrls.length > 0 && imageUrls.some(url => this.isSupabaseStorageUrl(url))) {
+      try {
+        await this.deleteProductImages(imageUrls);
+      } catch (deleteError) {
+        console.error('❌ Ошибка удаления загруженных изображений:', deleteError);
+      }
+    }
+    
+    throw error;
   }
+}
 
   /**
    * Обновляет существующий товар

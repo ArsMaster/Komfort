@@ -13,19 +13,20 @@
       
       <!-- Элемент с выпадающим меню -->
       <div class="nav-heading catalog-item" 
-           (mouseenter)="showCatalogDropdown()" 
-           (mouseleave)="hideCatalogDropdown()">
-        Каталог
-        <!-- Выпадающий список -->
-        <div class="dropdown-menu" [class.show]="isCatalogOpen()">
-          <!-- Динамические категории -->
-          <div *ngFor="let category of categories" 
-               class="dropdown-item"
-               (click)="navigateToCategory(category)">
-            {{ category.title }}
-          </div>
-        </div>
-      </div>
+     (mouseenter)="showCatalogDropdown()" 
+     (mouseleave)="hideCatalogDropdown()">
+  <!-- Добавьте обработчик клика на сам текст -->
+  <span (click)="navigateToAllProducts()">Каталог</span>
+  <!-- Выпадающий список -->
+  <div class="dropdown-menu" [class.show]="isCatalogOpen()">
+    <!-- Динамические категории -->
+    <div *ngFor="let category of categories" 
+         class="dropdown-item"
+         (click)="navigateToCategory(category)">
+      {{ category.title }}
+    </div>
+  </div>
+</div>
       
       <a routerLink="/shops" routerLinkActive="active" class="nav-heading">
         Магазины

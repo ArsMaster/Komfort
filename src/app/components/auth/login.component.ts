@@ -24,14 +24,36 @@ import { AuthService } from '../../services/auth.service';
             >
           </div>
           
-          <div class="form-group">
+          <div class="form-group password-field">
             <input 
-              type="password" 
+              [type]="showPassword ? 'text' : 'password'" 
               [(ngModel)]="password" 
               name="password"
               required
               placeholder="Пароль"
             >
+            <!-- Глазик для показа/скрытия пароля -->
+            <button 
+              type="button"
+              class="toggle-password"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword ? 'Скрыть пароль' : 'Показать пароль'">
+              <span class="eye-icon">
+                @if (showPassword) {
+                  <!-- Глаз открыт -->
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                } @else {
+                  <!-- Глаз закрыт -->
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                }
+              </span>
+            </button>
           </div>
           
           @if (errorMessage) {
@@ -71,6 +93,7 @@ import { AuthService } from '../../services/auth.service';
     
     .form-group {
       margin-bottom: 15px;
+      position: relative;
     }
     
     input {
@@ -79,9 +102,49 @@ import { AuthService } from '../../services/auth.service';
       border: 1px solid #ddd;
       border-radius: 4px;
       font-size: 16px;
+      box-sizing: border-box;
     }
     
-    button {
+    /* Стили для поля с паролем */
+    .password-field {
+      position: relative;
+    }
+    
+    .password-field input {
+      padding-right: 45px; /* Место для кнопки */
+    }
+    
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      padding: 5px;
+      cursor: pointer;
+      color: #888;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.3s;
+    }
+    
+    .toggle-password:hover {
+      color: #4dabf7;
+    }
+    
+    .toggle-password:focus {
+      outline: none;
+    }
+    
+    .eye-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    button[type="submit"] {
       width: 100%;
       padding: 12px;
       background: #4dabf7;
@@ -91,9 +154,14 @@ import { AuthService } from '../../services/auth.service';
       font-size: 16px;
       cursor: pointer;
       margin-top: 10px;
+      transition: background 0.3s;
     }
     
-    button:disabled {
+    button[type="submit"]:hover:not(:disabled) {
+      background: #339af0;
+    }
+    
+    button[type="submit"]:disabled {
       background: #ccc;
       cursor: not-allowed;
     }
@@ -109,17 +177,39 @@ import { AuthService } from '../../services/auth.service';
       text-align: center;
       color: #666;
     }
+
+    /* Адаптивность */
+    @media (max-width: 480px) {
+      .login-card {
+        padding: 20px;
+      }
+      
+      .toggle-password {
+        right: 8px;
+      }
+      
+      .toggle-password svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
   `]
 })
 export class LoginComponent {
   username = '';
   password = '';
   errorMessage = '';
+  showPassword = false; // Состояние видимости пароля
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
+
+  // Метод для переключения видимости пароля
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
 
   onSubmit(): void {
     if (this.authService.login(this.username, this.password)) {

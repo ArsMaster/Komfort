@@ -16,7 +16,7 @@ import { ProductService } from '../../services/product.service';
         <div style="margin-top: 10px; color: green;">
             {{ message }}
         </div>
-}
+      }
     </div>
   `
 })
@@ -35,29 +35,53 @@ export class TestSupabaseComponent {
   }
 
   async addTestProduct() {
-    const testProduct = {
-      name: 'Тестовый товар ' + new Date().getTime(),
-      price: 999.99,
-      description: 'Это тестовый товар из Supabase',
-      category: 'тест'
-    };
+    try {
+      // ✅ ИСПРАВЛЕНО: правильная структура данных для нового типа
+      const testProduct = {
+        name: 'Тестовый товар ' + new Date().getTime(),
+        description: 'Это тестовый товар из Supabase',
+        price: 999.99,
+        categoryId: 15, // ID категории "Корпусная мебель" (число, не строка!)
+        imageUrls: ['/assets/default-product.jpg'],
+        stock: 5,
+        features: ['Тестовая характеристика 1', 'Тестовая характеристика 2']
+      };
 
-    const result = await this.supabaseService.addProduct(testProduct);
-    if (result) {
-      this.message = 'Тестовый товар добавлен в Supabase! ID: ' + result.id;
-    } else {
-      this.message = 'Ошибка при добавлении товара';
+      console.log('📤 Отправляем тестовый товар:', testProduct);
+      
+      const result = await this.supabaseService.addProduct(testProduct);
+      
+      if (result) {
+        this.message = '✅ Тестовый товар добавлен в Supabase! ID: ' + result.id;
+        console.log('✅ Результат:', result);
+      } else {
+        this.message = '❌ Ошибка при добавлении товара';
+      }
+    } catch (error: any) {
+      this.message = '❌ Ошибка: ' + error.message;
+      console.error('❌ Ошибка:', error);
     }
   }
 
   async showProducts() {
-    const products = await this.supabaseService.getProducts();
-    console.log('Товары в Supabase:', products);
-    this.message = `Найдено товаров: ${products.length}`;
+    try {
+      const products = await this.supabaseService.getProducts();
+      console.log('📦 Товары в Supabase:', products);
+      
+      // Показываем категории для наглядности
+      products.forEach(p => {
+        console.log(`  - ${p.name}: категория ID=${p.categoryId}, название="${p.categoryName}"`);
+      });
+      
+      this.message = `✅ Найдено товаров: ${products.length}`;
+    } catch (error: any) {
+      this.message = '❌ Ошибка: ' + error.message;
+      console.error('❌ Ошибка:', error);
+    }
   }
 
   switchToSupabase() {
     this.productService.syncToSupabase();
-    this.message = 'Переключились на Supabase (режим тестирования)';
+    this.message = '🔄 Переключились на Supabase (режим тестирования)';
   }
 }

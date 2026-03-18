@@ -116,30 +116,24 @@ export class CatalogService {
    * Основной метод загрузки категорий
    */
   private async loadCategories(): Promise<void> {
-    this.loadingSubject.next(true);
-    this.errorSubject.next(null);
+  this.loadingSubject.next(true);
+  this.errorSubject.next(null);
 
-    try {
-      if (this.storageMode === 'local') {
-        await this.loadFromLocalStorage();
-      } else {
-        await this.loadFromSupabase();
-      }
-      
-      // Если после загрузки данных нет - показываем начальные (только для демо)
-      const currentCategories = this.categoriesSubject.getValue();
-      if (currentCategories.length === 0 && this.storageMode === 'local') {
-        console.log('📭 Нет данных, показываем начальные категории');
-        this.categoriesSubject.next(this.getInitialCategories());
-      }
-    } catch (error) {
-      console.error('❌ Ошибка загрузки категорий:', error);
-      this.errorSubject.next('Не удалось загрузить категории');
-      throw error;
-    } finally {
-      this.loadingSubject.next(false);
+  try {
+    if (this.storageMode === 'local') {
+      await this.loadFromLocalStorage();
+    } else {
+      await this.loadFromSupabase();
     }
+    
+  } catch (error) {
+    console.error('❌ Ошибка загрузки категорий:', error);
+    this.errorSubject.next('Не удалось загрузить категории');
+    throw error;
+  } finally {
+    this.loadingSubject.next(false);
   }
+}
 
   /**
    * Загрузка из localStorage
@@ -225,28 +219,18 @@ export class CatalogService {
         this.categoriesSubject.next(categories);
         
         // Сохраняем в localStorage как кэш
-        this.saveToLocalStorage(categories);
+        // this.saveToLocalStorage(categories);
         
-        console.log(`✅ Категории загружены из Supabase: ${categories.length}`);
-        
-        // Логируем для отладки
-        categories.slice(0, 3).forEach((cat, index) => {
-          console.log(`  ${index + 1}. ${cat.title} (ID: ${cat.id})`);
-        });
-      } else {
-        console.log('📭 В Supabase нет категорий');
-        // Не загружаем моковые данные для Supabase режима
-      }
-    } catch (error) {
-      console.error('❌ Ошибка загрузки из Supabase:', error);
-      
-      // Пробуем использовать кэш, если есть (даже устаревший)
-      if (this.categoriesCache) {
-        console.log('🔄 Используем устаревший кэш из-за ошибки');
-        this.categoriesSubject.next(this.categoriesCache);
-      }
-      
-      throw error;
+         console.log(`✅ Категории загружены из Supabase: ${categories.length}`);
+          } else {
+            console.log('📭 В Supabase нет категорий');
+            // НЕ загружаем моковые данные для Supabase режима
+            // Просто оставляем пустой массив
+          }
+        } catch (error) {
+          console.error('❌ Ошибка загрузки из Supabase:', error);
+          
+        throw error;
     }
   }
 
@@ -254,40 +238,40 @@ export class CatalogService {
    * Нормализация URL изображения
    */
   private normalizeImageUrl(imageUrl: string | null): string {
-    if (!imageUrl) {
-      return '/assets/default-category.jpg';
-    }
-
-    // Если это URL из Supabase Storage
-    if (imageUrl.includes('supabase.co')) {
-      return imageUrl;
-    }
-
-    // Если это локальный путь
-    if (imageUrl.startsWith('/assets/')) {
-      return imageUrl;
-    }
-
-    if (imageUrl.startsWith('assets/')) {
-      return '/' + imageUrl;
-    }
-
-    // Если это Base64 (не сохраняем большие данные)
-    if (imageUrl.startsWith('data:image')) {
-      console.warn('⚠️ Обнаружено Base64 изображение, заменяем на дефолтное');
-      return '/assets/default-category.jpg';
-    }
-
-    return imageUrl;
+  if (!imageUrl || imageUrl.trim() === '') {
+    return ''; // ← Пустая строка вместо дефолтного изображения
   }
+
+  const trimmedUrl = imageUrl.trim();
+  
+  // Если это URL из Supabase Storage
+  if (trimmedUrl.includes('supabase.co')) {
+    return trimmedUrl;
+  }
+
+  // Если это локальный путь (уже существующие изображения)
+  if (trimmedUrl.startsWith('/assets/')) {
+    return trimmedUrl;
+  }
+
+  if (trimmedUrl.startsWith('assets/')) {
+    return '/' + trimmedUrl;
+  }
+
+  // Во всех остальных случаях возвращаем как есть
+  return trimmedUrl;
+}
 
   /**
    * Сохранение в localStorage
    */
   private saveToLocalStorage(categories: CatalogCategory[]): void {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(categories));
-      console.log('💾 Категории сохранены в localStorage (кэш):', categories.length);
+      // ⚠️ ЗАКОММЕНТИРУЙТЕ:
+    // localStorage.setItem(this.storageKey, JSON.stringify(categories));
+    // console.log('💾 Категории сохранены в localStorage (кэш):', categories.length);
+    
+    console.log('⛔ Сохранение в localStorage отключено');
     } catch (error) {
       console.error('❌ Ошибка сохранения в localStorage:', error);
     }
@@ -532,7 +516,7 @@ export class CatalogService {
     this.categoriesCache = updatedCategories;
     
     // Сохраняем в localStorage
-    this.saveToLocalStorage(updatedCategories);
+    // this.saveToLocalStorage(updatedCategories);
     
     if (this.storageMode === 'supabase') {
       try {
@@ -581,7 +565,7 @@ export class CatalogService {
     this.categoriesCache = updatedCategories;
     
     // Сохраняем в localStorage
-    this.saveToLocalStorage(updatedCategories);
+    // this.saveToLocalStorage(updatedCategories);
     
     if (this.storageMode === 'supabase') {
       try {
@@ -655,7 +639,7 @@ export class CatalogService {
     this.categoriesCache = updatedCategories;
     
     // Сохраняем в localStorage
-    this.saveToLocalStorage(updatedCategories);
+    // this.saveToLocalStorage(updatedCategories);
     
     if (this.storageMode === 'supabase') {
       try {

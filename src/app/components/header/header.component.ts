@@ -145,4 +145,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isAdmin(): boolean {
     return this.authService.isAdmin();
   }
+
+  navigateToAllProducts() {
+  this.router.navigate(['/catalog']);
+}
 }
