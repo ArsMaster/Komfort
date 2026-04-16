@@ -1,10 +1,8 @@
-<!-- about.component.html -->
 <div class="about-komfort">
   <!-- Секция "О компании" -->
   <section class="about-section">
     <div class="container">
       <h1 class="section-title">О КОМПАНИИ</h1>
-      
       @if (isLoading) {
         <div class="loading-placeholder">
           <div class="spinner"></div>
@@ -38,7 +36,6 @@
       }
     </div>
   </section>
-
   <!-- Секция "Схема проезда" -->
   <section class="map-section">
     <div class="container">
@@ -51,7 +48,6 @@
               <h3>Адрес склада:</h3>
               <button class="print-btn" (click)="printMap()">распечатать схему проезда</button>
             </div>
-            
             @if (location.address) {
               <p class="address">{{ location.address }}</p>
               
@@ -66,7 +62,6 @@
             } @else {
               <p class="address">Адрес не указан</p>
             }
-            
             <div class="map-preview">
               <div id="yandex-map" class="map-container"></div>
               
@@ -81,7 +76,6 @@
                 </div>
               </div>
             </div>
-            
             @if (location.mapUrl) {
               <button class="open-map-btn" (click)="openMap()">
                 Открыть в Яндекс.Картах
@@ -93,5 +87,4 @@
     </div>
   </section>
 </div>
-
 <app-contacts></app-contacts>

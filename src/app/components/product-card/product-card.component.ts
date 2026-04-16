@@ -77,41 +77,17 @@ export class ProductCardComponent {
   }
 
   private getOptimizedImageUrl(originalUrl: string): string {
-    if (!originalUrl || originalUrl.trim() === '') {
-      return this.getFallbackImage();
-    }
-    
-    // Если это Supabase URL, оптимизируем его
-    if (originalUrl.includes('supabase.co')) {
-      // Определяем ширину для текущего устройства
-      const deviceWidth = window.innerWidth;
-      let width = 800;
-      let quality = 85;
-      
-      if (deviceWidth < 768) { // Мобильные
-        width = 400;
-        quality = 80;
-      } else if (deviceWidth < 1200) { // Планшеты
-        width = 600;
-        quality = 85;
-      }
-      
-      // Для карточек товаров используем меньшие размеры
-      const cardWidth = Math.min(width, 600);
-      
-      // Проверяем, есть ли уже параметры
-      if (originalUrl.includes('?')) {
-        // Добавляем или обновляем параметры
-        const urlWithoutParams = originalUrl.split('?')[0];
-        return `${urlWithoutParams}?width=${cardWidth}&quality=${quality}&format=auto`;
-      } else {
-        return `${originalUrl}?width=${cardWidth}&quality=${quality}&format=auto`;
-      }
-    }
-    
-    // Для локальных файлов
-    return this.getSafeImageUrl(originalUrl);
+  if (!originalUrl || originalUrl.trim() === '') {
+    return this.getFallbackImage();
   }
+  
+  // Просто возвращаем чистый URL без параметров
+  if (originalUrl.includes('supabase.co')) {
+    return originalUrl.split('?')[0];
+  }
+  
+  return this.getSafeImageUrl(originalUrl);
+}
 
 
   nextImage(event: Event): void {

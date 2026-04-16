@@ -64,20 +64,20 @@ export class CatalogComponent implements OnInit, OnDestroy {
    * Обработка изображения категории с low-quality placeholder
    */
   private processCategoryImage(category: CatalogCategory): CatalogCategory {
-    console.log(`📸 Категория "${category.title}" (ID: ${category.id}):`, {
-      originalImage: category.image?.substring(0, 50) + '...',
-      length: category.image?.length || 0
-    });
-    
-    const cleanedImage = this.cleanCategoryImage(category.image, category.id);
-    const lowQualityUrl = this.getLowQualityPlaceholder(cleanedImage, category.id);
-    
-    return {
-      ...category,
-      image: cleanedImage,
-      lowQualityImage: lowQualityUrl // Добавляем поле для placeholder
-    };
-  }
+  console.log(`📸 Категория "${category.title}" (ID: ${category.id}):`, {
+    originalImage: category.image?.substring(0, 50) + '...',
+    length: category.image?.length || 0
+  });
+  
+  // Просто используем оригинальное изображение
+  const lowQualityUrl = this.getLowQualityPlaceholder(category.image, category.id);
+  
+  return {
+    ...category,
+    image: category.image, // напрямую, без очистки
+    lowQualityImage: lowQualityUrl
+  };
+}
 
   private imageLoadedMap = new Map<number, boolean>();
 
@@ -95,19 +95,15 @@ isImageLoaded(categoryId: number): boolean {
     return this.lowQualityCache.get(cacheKey)!;
   }
   
+  // Убираем все параметры из URL
+  const cleanUrl = imageUrl?.split('?')[0] || '';
   let lowQualityUrl = '/assets/placeholder-blur.jpg';
   
-  // Для всех типов URL, включая локальные, используем общую логику
-  if (imageUrl.includes('supabase.co')) {
-    // Для Supabase - оптимизированный placeholder с сильным размытием
-    lowQualityUrl = `${imageUrl}?width=50&quality=20&blur=20&format=webp`;
-  } else if (imageUrl.startsWith('/assets/') || imageUrl.startsWith('http')) {
-    // Для локальных и других URL - использовать сервис для создания placeholder
-    // Или просто общий placeholder
+  if (cleanUrl.includes('supabase.co')) {
+    // Используем только правильные параметры Supabase
+    lowQualityUrl = `${cleanUrl}?width=50`; // Только width, без quality и format
+  } else if (cleanUrl.startsWith('/assets/') || cleanUrl.startsWith('http')) {
     lowQualityUrl = '/assets/placeholder-blur.jpg';
-  } else if (imageUrl.startsWith('data:image')) {
-    // Для Base64 - создаем миниатюру
-    lowQualityUrl = this.createLowQualityBase64(imageUrl);
   }
   
   this.lowQualityCache.set(cacheKey, lowQualityUrl);
@@ -131,68 +127,6 @@ isImageLoaded(categoryId: number): boolean {
     }
   }
 
-  private cleanCategoryImage(image: string, categoryId: number): string {
-    console.log(`🔄 Очистка изображения категории ${categoryId}:`, 
-      image ? `"${image}" (${image.length} chars)` : 'null');
-    
-    // Если изображение испорчено (короткая строка)
-    if (!image || image.length < 10) {
-      console.log(`   ⚠️ Испорченное/короткое изображение (${image?.length || 0} chars)`);
-      
-      // Маппинг для испорченных изображений
-      const fallbackImages: { [key: number]: string } = {
-        1: '/assets/livingroom.jpg',
-        2: '/assets/bedroom.jpg',
-        3: '/assets/kitchen.jpg', 
-        4: '/assets/other.jpg',
-        5: '/assets/bedroom2.JPG',
-        6: '/assets/default-category.jpg',
-        7: '/assets/default-category.jpg'
-      };
-      
-      const result = fallbackImages[categoryId] || '/assets/default-category.jpg';
-      console.log(`   ↪️ Используем: ${result}`);
-      return result;
-    }
-    
-    // Если это URL из Supabase
-    if (image.includes('supabase.co') || image.includes('storage/v1/object/public')) {
-      console.log(`   ✅ Supabase URL`);
-      return image;
-    }
-    
-    // Если это Base64 (полный)
-    if (image.startsWith('data:image') && image.length > 100) {
-      console.log(`   ⚠️ Base64 изображение`);
-      
-      // Конвертируем Base64 в локальный файл для этих ID
-      const localImages: { [key: number]: string } = {
-        1: '/assets/livingroom.jpg',
-        2: '/assets/bedroom.jpg',
-        3: '/assets/kitchen.jpg',
-        4: '/assets/other.jpg',
-        5: '/assets/bedroom2.JPG'
-      };
-      
-      return localImages[categoryId] || '/assets/default-category.jpg';
-    }
-    
-    // Если это локальный путь
-    if (image.startsWith('/assets/')) {
-      return image;
-    }
-    
-    if (image.startsWith('assets/')) {
-      return '/' + image;
-    }
-
-    // Дефолтное
-    return '/assets/default-category.jpg';
-  }
-
-  /**
-   * Предзагрузка low-quality placeholder изображений
-   */
   private lowQualityPreloaded = new Set<string>();
 
 private preloadLowQualityImages(categories: any[]): void {
@@ -246,41 +180,8 @@ private preloadLowQualityImages(categories: any[]): void {
    * Оптимизированный URL для текущего устройства
    */
   getOptimizedImageUrl(originalUrl: string, categoryId: number): string {
-  if (!originalUrl.includes('supabase.co')) {
-    return originalUrl;
-  }
-  
-  // Определяем ширину по device и pixel ratio
-  const deviceWidth = window.innerWidth;
-  const pixelRatio = window.devicePixelRatio || 1;
-  
-  let width = 800;
-  let quality = 85;
-  
-  if (deviceWidth < 768) { // Мобильные
-    width = Math.min(400, deviceWidth * pixelRatio);
-    quality = 80;
-  } else if (deviceWidth < 1200) { // Планшеты
-    width = Math.min(600, deviceWidth * pixelRatio);
-    quality = 85;
-  } else { // Десктоп
-    width = Math.min(1200, deviceWidth * pixelRatio);
-    quality = 90;
-  }
-  
-  // Для категорий используем меньшие размеры
-  const categoryWidths: { [key: number]: number } = {
-    1: Math.min(width, 800),  // Гостиная
-    2: Math.min(width, 800),  // Спальня
-    3: Math.min(width, 800),  // Кухня
-    4: Math.min(width, 600),  // Матрасы
-    6: Math.min(width, 600),  // Техника
-  };
-  
-  const optimizedWidth = categoryWidths[categoryId] || Math.min(width, 600);
-  
-  // Supabase Storage поддерживает ресайз через параметры
-  return `${originalUrl}?width=${optimizedWidth}&quality=${quality}&format=auto`;
+  // Возвращаем URL без каких-либо параметров
+  return originalUrl.split('?')[0];
 }
 
   onImageError(event: any, category: any): void {

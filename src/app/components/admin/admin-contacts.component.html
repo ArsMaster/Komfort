@@ -1,26 +1,6 @@
 <div class="admin-section">
   <h2>Управление контактами</h2>
   
-  <!-- Сообщение о статусе -->
-  @if (saveStatus === 'success') {
-    <div class="alert alert-success">
-      {{ saveMessage }}
-    </div>
-  }
-  
-  @if (saveStatus === 'error') {
-    <div class="alert alert-error">
-      {{ saveMessage }}
-    </div>
-  }
-  
-  @if (saveStatus === 'loading') {
-    <div class="loading-indicator">
-      <div class="spinner"></div>
-      <span>{{ saveMessage }}</span>
-    </div>
-  }
-  
   <form (ngSubmit)="saveContacts()">
     <div class="form-group">
       <label>Телефон:</label>
@@ -62,7 +42,7 @@
     <h3>Социальные сети</h3>
     
     <!-- БЫСТРОЕ ИСПРАВЛЕНИЕ: Используем track по индексу -->
-    @for (social of contacts.social; track socialTrackBy(i, social); let i = $index) {
+    @for (social of contacts.social; track socialTrackBy($index, social); let i = $index) {
       <div class="social-item">
         <div class="row">
           <div class="col">
@@ -108,23 +88,10 @@
     
     <div class="form-actions">
       <button type="submit" 
-              class="btn btn-success" 
-              [disabled]="saveStatus === 'loading' || !hasUnsavedChanges">
-        @if (saveStatus !== 'loading') {
-          Сохранить контакты
-        } @else {
-          Сохранение...
-        }
-      </button>
-      
-      <!-- @if (hasUnsavedChanges) {
-        <button type="button" 
-                (click)="cancelChanges()" 
-                class="btn"
-                style="background: white; border: 1px solid #6c757d; color: #6c757d;">
-          Отменить
-        </button>
-      } -->
+          class="btn btn-success" 
+          [disabled]="saveStatus === 'loading' || !hasUnsavedChanges">
+    Сохранить контакты
+  </button>
     </div>
   </form>
 </div>

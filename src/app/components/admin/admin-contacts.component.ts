@@ -213,26 +213,9 @@ export class AdminContactsComponent implements OnInit, OnDestroy {
       // 3. СОХРАНЕНИЕ ЧЕРЕЗ CONTACT SERVICE
       const success = await this.contactService.saveContacts(contactsToSave);
       
-      if (success) {
-        this.saveStatus = 'success';
-        this.saveMessage = 'Контакты успешно сохранены в Supabase!';
-        
-        // 4. ОБНОВЛЯЕМ ОРИГИНАЛЬНЫЕ ДАННЫЕ
-        this.originalContacts = { ...this.contacts };
-        this.hasUnsavedChanges = false;
-        
-        console.log('✅ Контакты сохранены в Supabase');
-        
-        // 5. СКРЫВАЕМ СООБЩЕНИЕ ЧЕРЕЗ 3 СЕКУНДЫ
-        setTimeout(() => {
-          this.saveStatus = 'idle';
-          this.saveMessage = '';
-          this.cdr.detectChanges();
-        }, 3000);
-        
-      } else {
-        throw new Error('Не удалось сохранить контакты в Supabase');
-      }
+          if (success) {
+           alert('✅ Контакты успешно сохранены!');
+          }
       
     } catch (error: any) {
       console.error('❌ Ошибка сохранения:', error);
