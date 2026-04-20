@@ -45,7 +45,7 @@
           
           <div class="address-card">
             <div class="address-header">
-              <h3>Адрес склада:</h3>
+              <h3>Адрес:</h3>
               <button class="print-btn" (click)="printMap()">распечатать схему проезда</button>
             </div>
             @if (location.address) {
@@ -53,7 +53,7 @@
               
               @if (location.workHours) {
                 <div class="work-hours">
-                  <h3>График работы склада:</h3>
+                  <h3>График работы:</h3>
                   <p>{{ location.workHours }}</p>
                 </div>
               }

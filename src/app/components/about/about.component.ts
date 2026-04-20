@@ -333,12 +333,14 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openMap(): void {
-    if (this.location.mapUrl) {
-      window.open(this.location.mapUrl, '_blank');
-    } else {
-      console.warn('Нет URL для открытия карты');
-    }
-  }
+  // Самый простой способ - поиск по ПОЛНОМУ адресу
+  const fullAddress = 'Чеченская Республика, г. Шелковская, ул. Косая, 47';
+  const encodedAddress = encodeURIComponent(fullAddress);
+  const mapsUrl = `https://yandex.ru/maps/?text=${encodedAddress}&z=17`;
+  
+  console.log('🗺️ Открываем карту по адресу:', fullAddress);
+  window.open(mapsUrl, '_blank');
+}
   
   retryLoad(): void {
     console.log('🔄 Повторная попытка загрузки данных');
