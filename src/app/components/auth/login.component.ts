@@ -16,11 +16,11 @@ import { AuthService } from '../../services/auth.service';
         <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
           <div class="form-group">
             <input 
-              type="text" 
-              [(ngModel)]="username" 
-              name="username"
+              type="email" 
+              [(ngModel)]="email" 
+              name="email"
               required
-              placeholder="Логин"
+              placeholder="Email"
             >
           </div>
           
@@ -32,21 +32,17 @@ import { AuthService } from '../../services/auth.service';
               required
               placeholder="Пароль"
             >
-            <!-- Глазик для показа/скрытия пароля -->
             <button 
               type="button"
               class="toggle-password"
-              (click)="togglePassword()"
-              [attr.aria-label]="showPassword ? 'Скрыть пароль' : 'Показать пароль'">
+              (click)="togglePassword()">
               <span class="eye-icon">
                 @if (showPassword) {
-                  <!-- Глаз открыт -->
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
                 } @else {
-                  <!-- Глаз закрыт -->
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                     <line x1="1" y1="1" x2="23" y2="23"></line>
@@ -60,8 +56,12 @@ import { AuthService } from '../../services/auth.service';
             <div class="error">{{ errorMessage }}</div>
           }
           
-          <button type="submit" [disabled]="!loginForm.form.valid">
-            Войти
+          <button type="submit" [disabled]="!loginForm.form.valid || isLoading">
+            @if (isLoading) {
+              <span>Вход...</span>
+            } @else {
+              <span>Войти</span>
+            }
           </button>
         </form>
       </div>
@@ -196,27 +196,40 @@ import { AuthService } from '../../services/auth.service';
   `]
 })
 export class LoginComponent {
-  username = '';
+  email = '';  // ✅ Теперь это email, а не username
   password = '';
   errorMessage = '';
-  showPassword = false; // Состояние видимости пароля
+  showPassword = false;
+  isLoading = false;
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
 
-  // Метод для переключения видимости пароля
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
 
-  onSubmit(): void {
-    if (this.authService.login(this.username, this.password)) {
-      this.router.navigate(['/admin']);
-    } else {
-      this.errorMessage = 'Неверный логин или пароль';
-      this.password = '';
+  async onSubmit(): Promise<void> {
+    this.errorMessage = '';
+    this.isLoading = true;
+
+    try {
+      // ✅ Вход через Supabase
+      const success = await this.authService.login(this.email, this.password);
+
+      if (success) {
+        this.router.navigate(['/admin']);
+      } else {
+        this.errorMessage = 'Неверный email или пароль. Попробуйте снова.';
+        this.password = '';
+      }
+    } catch (error) {
+      console.error('Ошибка при входе:', error);
+      this.errorMessage = 'Произошла ошибка при входе. Попробуйте позже.';
+    } finally {
+      this.isLoading = false;
     }
   }
 }

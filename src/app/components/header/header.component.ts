@@ -133,7 +133,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   goToAdminPanel(): void {
-    this.authService.navigateToAdmin();
+    this.router.navigate(['/admin']);
     this.closeMenu();
   }
 
