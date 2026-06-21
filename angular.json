@@ -22,7 +22,7 @@
           "builder": "@angular/build:application",
           "options": {
             "outputPath": "dist/komfort",
-            "baseHref": "/",
+            "baseHref": "/Komfort/",
             "deployUrl": "/",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
