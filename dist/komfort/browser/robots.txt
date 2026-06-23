@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://td-komfort.com/sitemap.xml
